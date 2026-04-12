@@ -61,7 +61,7 @@ public class GridManager : MonoBehaviour
         if (prefab != null)
         {
             // 1. Fixed Spacing (This matches the size of a standard 1-unit sprite)
-            float spacing = 1.0f; 
+            float spacing = 0.5f; 
 
             // 2. Calculate Center Offset
             // (x - 4.0f) centers 9 columns (0 to 8)
@@ -77,7 +77,7 @@ public class GridManager : MonoBehaviour
             item.transform.SetParent(gridParent);
             
             // 4. FIX THE OVERLAP: Set a clean sorting order
-            item.GetComponent<SpriteRenderer>().sortingOrder = (y * 10) + x;
+            item.GetComponent<SpriteRenderer>().sortingOrder = ((10 - y) * 10) + x;
 
             // 5. Link the Script
             Cube cubeScript = item.GetComponent<Cube>();
