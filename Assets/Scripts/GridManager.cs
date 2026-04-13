@@ -23,11 +23,12 @@ public class GridManager : MonoBehaviour
 
     private LevelData currentLevelData;
     private Cube[,] allCubes; 
-    private float spacing = 0.55f; 
+    private float spacing = 0.48f; 
 
     [Header("UI References")]
     public TMPro.TextMeshProUGUI moveCounterText; // The counter for move (get from JSON file)
     public UnityEngine.UI.Image goalIconImage;     // The goal icon according to the level
+    private int movesLeft; // This will change as we play
     void Start()
     {
         LoadLevel(1); 
@@ -41,6 +42,10 @@ public class GridManager : MonoBehaviour
         if (jsonFile != null)
         {
             currentLevelData = JsonUtility.FromJson<LevelData>(jsonFile.text);
+
+            //Initialized the counter
+            movesLeft = currentLevelData.move_count;
+            UpdateMovesUI();   // helper function to update moves
 
             // 1. Update the Move Counter (The number in the right box)
             if(moveCounterText != null)
@@ -74,22 +79,24 @@ public class GridManager : MonoBehaviour
 
     void GenerateGrid()
     {
-        int index = 0;
         string[] colors = { "r", "g", "b", "y" };
+        int totalCells = currentLevelData.grid_width * currentLevelData.grid_height;
 
         for (int y = 0; y < currentLevelData.grid_height; y++)
         {
             for (int x = 0; x < currentLevelData.grid_width; x++)
             {
-                string itemType = currentLevelData.grid[index];
+                int normalIndex = y * currentLevelData.grid_width + x;
+                int reversedIndex = totalCells - 1 - normalIndex;
 
-                if (itemType == "rand") 
+                string itemType = currentLevelData.grid[reversedIndex];
+
+                if (itemType == "rand")
                 {
                     itemType = colors[Random.Range(0, colors.Length)];
                 }
 
                 SpawnItem(itemType, x, y);
-                index++;
             }
         }
     }
@@ -99,6 +106,7 @@ public class GridManager : MonoBehaviour
         GameObject prefab = null;
         bool isObstacle = false;
 
+        // 1. Determine the Prefab Type
         switch (type)
         {
             case "r": prefab = redCubePrefab; break;
@@ -112,19 +120,39 @@ public class GridManager : MonoBehaviour
 
         if (prefab != null)
         {
-            float posX = (x - (currentLevelData.grid_width / 2f) + 0.5f) * spacing;
-            float posY = (-(y - (currentLevelData.grid_height / 2f)) - 0.5f) * spacing + 0.5f;
+            // 2. Centering Math
+            // We find the total width/height and divide by 2 to find the offset from center (0,0)
+            float halfWidth = (currentLevelData.grid_width - 1) * spacing / 2f;
+            float halfHeight = (currentLevelData.grid_height - 1) * spacing / 2f;
+
+            // posX: Starts negative (left) and moves positive (right) as x increases
+            float posX = (x * spacing) - halfWidth;
+            
+            // posY: Starts positive (top) and moves negative (bottom) as y increases
+            // This ensures JSON index 0 is at the top and index 8 is at the bottom
+            float posY = halfHeight - (y * spacing);
 
             Vector3 position = new Vector3(posX, posY, 0);
-            
-            // Assign to the correct folder in the hierarchy
+
+            // 3. Spawning
             Transform targetParent = isObstacle ? obstaclesParent : cubesParent;
             GameObject item = Instantiate(prefab, position, Quaternion.identity, targetParent);
-            
-            item.transform.localScale = new Vector3(0.4f, 0.4f, 1f);
-            item.GetComponent<SpriteRenderer>().sortingOrder = ((20 - y) * 10) + x;
+
+            // 4. Visual Adjustments
+            item.transform.localScale = new Vector3(0.34f, 0.34f, 1f);
+
+            SpriteRenderer sr = item.GetComponent<SpriteRenderer>();
+            if (sr != null)
+            {
+                // Higher y (bottom of screen) should have lower sorting order 
+                // so cubes "behind" stay behind cubes "in front"
+                int baseOrder = ((currentLevelData.grid_height - y) * 10) + x;
+                sr.sortingOrder = isObstacle ? baseOrder - 1 : baseOrder;
+            }
+
             item.name = $"{type}_{x}_{y}";
 
+            // 5. Data Link
             Cube cubeScript = item.GetComponent<Cube>();
             if (cubeScript != null)
             {
@@ -156,6 +184,7 @@ public class GridManager : MonoBehaviour
 
         if (matches.Count >= 2)
         {
+            DecrementMoves();   // decrease moves as we play
             // Use a HashSet to ensure we don't damage the same obstacle twice in one click
             HashSet<Obstacle> damagedObstacles = new HashSet<Obstacle>();
 
@@ -166,6 +195,28 @@ public class GridManager : MonoBehaviour
                 Destroy(c.gameObject);
             }
             ApplyGravity();
+        }
+    }
+
+    void DecrementMoves()
+    {
+        movesLeft--;
+
+        UpdateMovesUI();
+
+        if (movesLeft <= 0)
+        {
+            Debug.Log("Out of moves! Game over");
+            // Trigger "Game over" UI in here.
+        
+        }
+    }
+
+    void UpdateMovesUI()
+    {
+        if (moveCounterText != null)
+        {
+            moveCounterText.text = movesLeft.ToString();
         }
     }
 
@@ -219,7 +270,7 @@ public class GridManager : MonoBehaviour
         {
             for (int y = currentLevelData.grid_height - 1; y >= 0; y--)
             {
-                if (allCubes[x, y] == null) 
+                if (allCubes[x, y] == null)
                 {
                     for (int nextY = y - 1; nextY >= 0; nextY--)
                     {
@@ -230,8 +281,21 @@ public class GridManager : MonoBehaviour
                             allCubes[x, nextY] = null;
 
                             cubeToMove.y = y;
-                            float targetY = (-(y - (currentLevelData.grid_height / 2f)) - 0.5f) * spacing + 0.5f;
-                            cubeToMove.transform.position = new Vector3(cubeToMove.transform.position.x, targetY, 0);
+
+                            float targetY = ((currentLevelData.grid_height / 2f) - y - 0.5f) * spacing + 0.5f;
+                            cubeToMove.transform.position = new Vector3(
+                                cubeToMove.transform.position.x,
+                                targetY,
+                                0
+                            );
+
+                            SpriteRenderer sr = cubeToMove.GetComponent<SpriteRenderer>();
+                            if (sr != null)
+                            {
+                                int baseOrder = ((currentLevelData.grid_height - y) * 10) + x;
+                                sr.sortingOrder = baseOrder;
+                            }
+
                             break;
                         }
                     }

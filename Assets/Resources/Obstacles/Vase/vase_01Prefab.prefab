@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6184146903523706393}
   - component: {fileID: 4836292029989279625}
   - component: {fileID: 8936756656007598403}
+  - component: {fileID: 688001541610156533}
   m_Layer: 0
   m_Name: vase_01Prefab
   m_TagString: Untagged
@@ -130,3 +131,22 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1.42, y: 1.62}
   m_EdgeRadius: 0
+--- !u!114 &688001541610156533
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2608457032037634377}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a33dbf9b643ce264cadb24060f14d522, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  obstacleType: 
+  health: 1
+  crackedVaseSprite: {fileID: 21300000, guid: d94ad88700b385b4eb30d144a9abf4c4, type: 3}
+  shardPrefabs:
+  - {fileID: 7543395851263445622, guid: 3409a48c774eefd47be58181a6208999, type: 3}
+  - {fileID: 2614271460757602890, guid: d258570cab5b2af4d97d45132417aa8c, type: 3}
+  - {fileID: 944122416443534506, guid: e0732747213511040a15203e309f7605, type: 3}

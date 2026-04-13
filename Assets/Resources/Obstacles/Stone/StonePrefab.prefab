@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1900512252352638887}
   - component: {fileID: 4438292454642752503}
   - component: {fileID: 1563871965821715650}
+  - component: {fileID: 3559062689496193349}
   m_Layer: 0
   m_Name: StonePrefab
   m_TagString: Untagged
@@ -130,3 +131,22 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1.42, y: 1.62}
   m_EdgeRadius: 0
+--- !u!114 &3559062689496193349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6463514956440257223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a33dbf9b643ce264cadb24060f14d522, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  obstacleType: 
+  health: 1
+  crackedVaseSprite: {fileID: 0}
+  shardPrefabs:
+  - {fileID: 7556507809661240134, guid: 3b3896540cf673440ba5301955b46e8f, type: 3}
+  - {fileID: 5323234040908415325, guid: 408c4182cccfe054f8da9d34162d1c2f, type: 3}
+  - {fileID: 7555619141724941116, guid: c73b77280fb35ba40ad9f03d84f14f3f, type: 3}

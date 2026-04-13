@@ -43,23 +43,27 @@ public class Obstacle : MonoBehaviour
 
     void Explode()
     {
-        // Spawn each shard from your list
-        foreach (GameObject shard in shardPrefabs)
+        foreach (GameObject shardPrefab in shardPrefabs)
         {
-            if (shard != null)
+            if (shardPrefab != null)
             {
-                // Spawn with a tiny random offset so they don't overlap perfectly
-                Vector3 offset = new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f), 0);
+                // Spawn the shard at the obstacle's position
+                GameObject piece = Instantiate(shardPrefab, transform.position, Quaternion.identity, effectsParent);
                 
-                // Instantiate shards as children of the Obstacles folder
-                GameObject piece = Instantiate(shard, transform.position + offset, Quaternion.identity, effectsParent);
-                
-                // Cleanup: Destroy the shards after 1.5 seconds
+                Rigidbody2D rb = piece.GetComponent<Rigidbody2D>();
+                if (rb != null)
+                {
+                    // Create an "explosion" force: 
+                    // X goes left or right, Y always goes UP first (like a fountain)
+                    Vector2 force = new Vector2(Random.Range(-3f, 3f), Random.Range(3f, 6f));
+                    rb.AddForce(force, ForceMode2D.Impulse);
+                }
+
+                // The shard script handles the spinning, we just handle the cleanup
                 Destroy(piece, 1.5f);
             }
         }
         
-        // Finally, remove the main obstacle from the grid
-        Destroy(gameObject); 
+        Destroy(gameObject); // Remove the original box/stone/vase
     }
 }
