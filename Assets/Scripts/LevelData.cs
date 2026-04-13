@@ -1,12 +1,17 @@
 using System;
 using System.Collections.Generic;
 
-[Serializable]
+[System.Serializable]
 public class LevelData
 {
     public int level_number;
     public int grid_width;
     public int grid_height;
     public int move_count;
-    public List<string> grid; // holds the "bo", "r", "g" strings from JSON
+    
+    // ADD THESE TWO LINES:
+    public string goal_type; // e.g., "r" for red cubes, "bo" for boxes
+    public int goal_count;   // e.g., 10
+    
+    public string[] grid;
 }

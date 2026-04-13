@@ -3,43 +3,91 @@ using System.Collections.Generic;
 
 public class GridManager : MonoBehaviour
 {
+    [Header("References")]
     public Transform gridParent;
-    public GameObject redCubePrefab, greenCubePrefab, blueCubePrefab, yellowCubePrefab, boxPrefab;
+    public RectTransform gridBackgroundRect; 
+    public Transform cubesParent;     // Drag "Cubes" empty object here
+    public Transform obstaclesParent; // Drag "Obstacles" empty object here
+
+    [Header("Prefabs")]
+    public GameObject redCubePrefab;
+    public GameObject greenCubePrefab;
+    public GameObject blueCubePrefab;
+    public GameObject yellowCubePrefab;
+    public GameObject boxPrefab;
+    public GameObject stonePrefab; 
+    public GameObject vasePrefab;  
+
+    [Header("UI")]
+    public TMPro.TextMeshProUGUI movesText;
 
     private LevelData currentLevelData;
-    
-    // This is our "Mental Map" of the grid. [9 columns, 10 rows]
-    public Cube[,] allCubes = new Cube[9, 10]; 
+    private Cube[,] allCubes; 
+    private float spacing = 0.55f; 
 
+    [Header("UI References")]
+    public TMPro.TextMeshProUGUI moveCounterText; // The counter for move (get from JSON file)
+    public UnityEngine.UI.Image goalIconImage;     // The goal icon according to the level
     void Start()
     {
         LoadLevel(1); 
     }
 
-    void LoadLevel(int levelNumber)
+    public void LoadLevel(int levelNumber)
     {
-        string filePath = "Levels/level_" + levelNumber; 
+        string filePath = "Levels/level_" + levelNumber.ToString("D2"); 
         TextAsset jsonFile = Resources.Load<TextAsset>(filePath);
 
         if (jsonFile != null)
         {
             currentLevelData = JsonUtility.FromJson<LevelData>(jsonFile.text);
+
+            // 1. Update the Move Counter (The number in the right box)
+            if(moveCounterText != null)
+            {
+                moveCounterText.text = currentLevelData.move_count.ToString();
+            }
+            
+
+            if (goalIconImage != null)
+            {
+                // Load the sprite for the goal icon based on the JSON goal type
+                // This assumes you have sprites in Resources/Sprites/Icons named like "r_icon"
+                Sprite goalSprite = Resources.Load<Sprite>("Sprites/Icons/" + currentLevelData.goal_type + "_icon");
+                if (goalSprite != null)
+                {
+                    goalIconImage.sprite = goalSprite;
+                }
+            }
+            
+            // 3. Initialize Grid Logic
+            allCubes = new Cube[currentLevelData.grid_width, currentLevelData.grid_height];
+            
             GenerateGrid();
+            ResizeBackground();
         }
         else
         {
-            Debug.LogError("Cannot find Level JSON at " + filePath);
+            Debug.LogError($"Cannot find Level JSON at {filePath}");
         }
     }
 
     void GenerateGrid()
     {
         int index = 0;
+        string[] colors = { "r", "g", "b", "y" };
+
         for (int y = 0; y < currentLevelData.grid_height; y++)
         {
             for (int x = 0; x < currentLevelData.grid_width; x++)
             {
                 string itemType = currentLevelData.grid[index];
+
+                if (itemType == "rand") 
+                {
+                    itemType = colors[Random.Range(0, colors.Length)];
+                }
+
                 SpawnItem(itemType, x, y);
                 index++;
             }
@@ -49,37 +97,34 @@ public class GridManager : MonoBehaviour
     void SpawnItem(string type, int x, int y)
     {
         GameObject prefab = null;
+        bool isObstacle = false;
+
         switch (type)
         {
             case "r": prefab = redCubePrefab; break;
             case "g": prefab = greenCubePrefab; break;
             case "b": prefab = blueCubePrefab; break;
             case "y": prefab = yellowCubePrefab; break;
-            case "bo": prefab = boxPrefab; break;
+            case "bo": prefab = boxPrefab; isObstacle = true; break;
+            case "s": prefab = stonePrefab; isObstacle = true; break;
+            case "v": prefab = vasePrefab; isObstacle = true; break;
         }
 
         if (prefab != null)
         {
-            // 1. Fixed Spacing (This matches the size of a standard 1-unit sprite)
-            float spacing = 0.5f; 
-
-            // 2. Calculate Center Offset
-            // (x - 4.0f) centers 9 columns (0 to 8)
-            // (y - 4.5f) centers 10 rows (0 to 9)
-            float posX = (x - 4.0f) * spacing; 
-            float posY = (-(y - 4.5f)) * spacing; // Invert Y so 0 is top
-
-            // 3. Move the whole grid down slightly to clear the Purple Header
-            posY -= 1.5f; 
+            float posX = (x - (currentLevelData.grid_width / 2f) + 0.5f) * spacing;
+            float posY = (-(y - (currentLevelData.grid_height / 2f)) - 0.5f) * spacing + 0.5f;
 
             Vector3 position = new Vector3(posX, posY, 0);
-            GameObject item = Instantiate(prefab, position, Quaternion.identity);
-            item.transform.SetParent(gridParent);
             
-            // 4. FIX THE OVERLAP: Set a clean sorting order
-            item.GetComponent<SpriteRenderer>().sortingOrder = ((10 - y) * 10) + x;
+            // Assign to the correct folder in the hierarchy
+            Transform targetParent = isObstacle ? obstaclesParent : cubesParent;
+            GameObject item = Instantiate(prefab, position, Quaternion.identity, targetParent);
+            
+            item.transform.localScale = new Vector3(0.4f, 0.4f, 1f);
+            item.GetComponent<SpriteRenderer>().sortingOrder = ((20 - y) * 10) + x;
+            item.name = $"{type}_{x}_{y}";
 
-            // 5. Link the Script
             Cube cubeScript = item.GetComponent<Cube>();
             if (cubeScript != null)
             {
@@ -91,50 +136,107 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    // --- NEW LOGIC: CLICKING AND MATCHING ---
+    void ResizeBackground()
+    {
+        if (gridBackgroundRect == null || currentLevelData == null) return;
+
+        float ppu = 100f; 
+        float totalWidth = currentLevelData.grid_width * spacing;
+        float totalHeight = currentLevelData.grid_height * spacing;
+        float padding = 0.5f;
+
+        gridBackgroundRect.sizeDelta = new Vector2((totalWidth + padding) * ppu, (totalHeight + padding) * ppu);
+        gridBackgroundRect.anchoredPosition = new Vector2(0, 0.5f * ppu);
+    }
 
     public void OnCubeClicked(Cube clickedCube)
     {
-        // 1. Create a list to hold all the cubes in the group
         List<Cube> matches = new List<Cube>();
-
-        // 2. Use "Flood Fill" to find all touching cubes of the same color
         FindMatches(clickedCube.x, clickedCube.y, clickedCube.color, matches);
 
-        // 3. Toon Blast rule: Only blast if the group has 2 or more
         if (matches.Count >= 2)
         {
+            // Use a HashSet to ensure we don't damage the same obstacle twice in one click
+            HashSet<Obstacle> damagedObstacles = new HashSet<Obstacle>();
+
             foreach (Cube c in matches)
             {
-                // Remove from our mental map
+                CheckForObstacleNeighbors(c.x, c.y, damagedObstacles);
                 allCubes[c.x, c.y] = null;
-                // Remove from the screen
                 Destroy(c.gameObject);
             }
-            
-            // TODO: Add "ApplyGravity()" here next to make cubes fall!
-            Debug.Log($"Blasted {matches.Count} cubes!");
+            ApplyGravity();
         }
     }
 
-    // This looks at neighbors recursively to find the group
+    void CheckForObstacleNeighbors(int x, int y, HashSet<Obstacle> damagedList)
+    {
+        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+
+        foreach (Vector2Int dir in directions)
+        {
+            int nx = x + dir.x;
+            int ny = y + dir.y;
+
+            if (nx >= 0 && nx < currentLevelData.grid_width && ny >= 0 && ny < currentLevelData.grid_height)
+            {
+                // Calculate position to look for a collider
+                float checkX = (nx - (currentLevelData.grid_width / 2f) + 0.5f) * spacing;
+                float checkY = (-(ny - (currentLevelData.grid_height / 2f)) - 0.5f) * spacing + 0.5f;
+
+                Collider2D hit = Physics2D.OverlapPoint(new Vector2(checkX, checkY));
+                if (hit != null)
+                {
+                    Obstacle obs = hit.GetComponent<Obstacle>();
+                    if (obs != null && !damagedList.Contains(obs))
+                    {
+                        obs.TakeDamage();
+                        damagedList.Add(obs);
+                    }
+                }
+            }
+        }
+    }
+
     void FindMatches(int x, int y, string color, List<Cube> matches)
     {
-        // Boundary checks
-        if (x < 0 || x >= 9 || y < 0 || y >= 10) return;
+        if (x < 0 || x >= currentLevelData.grid_width || y < 0 || y >= currentLevelData.grid_height) return;
 
         Cube cube = allCubes[x, y];
-
-        // Stop if: No cube here, already in our list, or wrong color
         if (cube == null || matches.Contains(cube) || cube.color != color) return;
 
-        // Add this cube to the group
         matches.Add(cube);
 
-        // Check all 4 neighbors (Up, Down, Left, Right)
         FindMatches(x + 1, y, color, matches);
         FindMatches(x - 1, y, color, matches);
         FindMatches(x, y + 1, color, matches);
         FindMatches(x, y - 1, color, matches);
+    }
+
+    public void ApplyGravity()
+    {
+        for (int x = 0; x < currentLevelData.grid_width; x++)
+        {
+            for (int y = currentLevelData.grid_height - 1; y >= 0; y--)
+            {
+                if (allCubes[x, y] == null) 
+                {
+                    for (int nextY = y - 1; nextY >= 0; nextY--)
+                    {
+                        if (allCubes[x, nextY] != null)
+                        {
+                            Cube cubeToMove = allCubes[x, nextY];
+                            allCubes[x, y] = cubeToMove;
+                            allCubes[x, nextY] = null;
+
+                            cubeToMove.y = y;
+                            float targetY = (-(y - (currentLevelData.grid_height / 2f)) - 0.5f) * spacing + 0.5f;
+                            cubeToMove.transform.position = new Vector3(cubeToMove.transform.position.x, targetY, 0);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
