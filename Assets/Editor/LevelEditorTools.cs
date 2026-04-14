@@ -16,14 +16,18 @@ public class LevelEditorTools : EditorWindow
 
     static LevelEditorTools()
     {
-        SetMainSceneAsPlayModeStartScene();
+        EditorApplication.delayCall += SetMainSceneAsPlayModeStartScene;
+    }
+
+    void OnEnable()
+    {
+        selectedLevel = Mathf.Clamp(PlayerPrefs.GetInt(CurrentLevelKey, MinLevel), MinLevel, MaxLevel);
     }
 
     [MenuItem("Menu/Level Selector")]
     public static void ShowWindow()
     {
         LevelEditorTools window = GetWindow<LevelEditorTools>("Level Selector");
-        window.selectedLevel = Mathf.Clamp(PlayerPrefs.GetInt(CurrentLevelKey, MinLevel), MinLevel, MaxLevel);
         window.minSize = new Vector2(260f, 120f);
         window.Show();
     }
@@ -37,6 +41,11 @@ public class LevelEditorTools : EditorWindow
     [MenuItem("Menu/Use MainScene On Play")]
     public static void SetMainSceneAsPlayModeStartScene()
     {
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+        {
+            return;
+        }
+
         SceneAsset mainScene = AssetDatabase.LoadAssetAtPath<SceneAsset>("Assets/Scenes/MainScene.unity");
         EditorSceneManager.playModeStartScene = mainScene;
     }

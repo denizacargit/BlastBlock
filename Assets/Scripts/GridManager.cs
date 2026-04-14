@@ -53,6 +53,7 @@ public class GridManager : MonoBehaviour
     private const float RocketPartSpeed = 3f;
     private const float RocketPartLifetime = 0.8f;
     private const float WinReturnDelay = 1.5f;
+    private const int BoardSortingBase = 100;
     private readonly string[] cubeTypes = { "r", "g", "b", "y" };
     private readonly string[] obstacleGoalTypes = { "s", "bo", "v" };
 
@@ -283,18 +284,24 @@ public class GridManager : MonoBehaviour
 
     void ApplyGoalSlotLayout(RectTransform rect, int index, int totalCount)
     {
+        Vector2 slotSize;
+
         if (totalCount == 1)
         {
             rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = new Vector2(72f, 72f);
+            slotSize = new Vector2(70f, 70f);
+            rect.sizeDelta = slotSize;
+            ApplyGoalSlotVisualSize(rect, slotSize);
             return;
         }
 
         if (totalCount == 2)
         {
-            float x = index == 0 ? -32f : 32f;
-            rect.anchoredPosition = new Vector2(x, 4f);
-            rect.sizeDelta = new Vector2(58f, 58f);
+            float x = index == 0 ? -28f : 28f;
+            rect.anchoredPosition = new Vector2(x, 3f);
+            slotSize = new Vector2(55f, 55f);
+            rect.sizeDelta = slotSize;
+            ApplyGoalSlotVisualSize(rect, slotSize);
             return;
         }
 
@@ -302,13 +309,25 @@ public class GridManager : MonoBehaviour
         {
             Vector2[] positions =
             {
-                new Vector2(-30f, 18f),
-                new Vector2(30f, 18f),
-                new Vector2(0f, -28f)
+                new Vector2(-25f, 21f),
+                new Vector2(25f, 21f),
+                new Vector2(0f, -29f)
             };
 
             rect.anchoredPosition = positions[index];
-            rect.sizeDelta = new Vector2(50f, 50f);
+            slotSize = new Vector2(45f, 45f);
+            rect.sizeDelta = slotSize;
+            ApplyGoalSlotVisualSize(rect, slotSize);
+        }
+    }
+
+    void ApplyGoalSlotVisualSize(RectTransform rect, Vector2 slotSize)
+    {
+        GoalSlotUI slot = rect.GetComponent<GoalSlotUI>();
+
+        if (slot != null)
+        {
+            slot.ApplyVisualSize(slotSize);
         }
     }
 
@@ -678,9 +697,7 @@ public class GridManager : MonoBehaviour
             SpriteRenderer sr = item.GetComponent<SpriteRenderer>();
             if (sr != null)
             {
-                // Y ekseni arttıkça arkada kalması için (y * -10) mantığı kullanılabilir
-                int baseOrder = (y * 10) + x;
-                sr.sortingOrder = isObstacle ? baseOrder + 1 : baseOrder;
+                sr.sortingOrder = GetBoardSortingOrder(x, y, isObstacle ? 1 : 0);
             }
 
             // 5. Veri Yapılarını Güncelleme (En Kritik Kısım)
@@ -796,7 +813,7 @@ public class GridManager : MonoBehaviour
         SpriteRenderer sr = rocket.GetComponent<SpriteRenderer>();
         if (sr != null)
         {
-            sr.sortingOrder = (y * 10) + x + 1;
+            sr.sortingOrder = GetBoardSortingOrder(x, y, 1);
         }
     }
 
@@ -900,7 +917,7 @@ public class GridManager : MonoBehaviour
             SpriteRenderer sr = hint.GetComponent<SpriteRenderer>();
             if (sr != null)
             {
-                sr.sortingOrder = (cube.y * 10) + cube.x + 2;
+                sr.sortingOrder = GetBoardSortingOrder(cube.x, cube.y, 2);
             }
         }
     }
@@ -928,8 +945,13 @@ public class GridManager : MonoBehaviour
         SpriteRenderer sr = cube.GetComponent<SpriteRenderer>();
         if (sr != null)
         {
-            sr.sortingOrder = (y * 10) + x;
+            sr.sortingOrder = GetBoardSortingOrder(x, y);
         }
+    }
+
+    int GetBoardSortingOrder(int x, int y, int layerOffset = 0)
+    {
+        return BoardSortingBase + (y * 10) + x + layerOffset;
     }
 
     IEnumerator MoveCubeTo(Transform cubeTransform, Vector3 targetPosition)
