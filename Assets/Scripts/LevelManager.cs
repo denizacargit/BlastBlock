@@ -12,7 +12,7 @@ public class LevelManager : MonoBehaviour
     void Start()
     {
         // 1. Load the saved level from memory (Default to 1 if first time playing)
-        currentLevel = PlayerPrefs.GetInt("CurrentLevel", 1);
+        currentLevel = Mathf.Clamp(PlayerPrefs.GetInt("CurrentLevel", 1), 1, 10);
         
         // 2. Update the button text based on the level
         UpdateUI();
@@ -22,23 +22,13 @@ public class LevelManager : MonoBehaviour
     {
         if (levelButtonText == null) return;
 
-        if (currentLevel > 10) 
-        {
-            levelButtonText.text = "Finished";
-        }
-        else
-        {
-            levelButtonText.text = "Level " + currentLevel;
-        }
+        levelButtonText.text = "Level " + currentLevel;
     }
 
     // This is the function the button will trigger
     public void LoadCurrentLevel()
     {
-        if (currentLevel <= 10)
-        {
-            // This loads the scene named "LevelScene"
-            SceneManager.LoadScene("LevelScene");
-        }
+        currentLevel = Mathf.Clamp(PlayerPrefs.GetInt("CurrentLevel", currentLevel), 1, 10);
+        SceneManager.LoadScene("LevelScene");
     }
 }

@@ -1192,14 +1192,16 @@ MonoBehaviour:
   greenCubePrefab: {fileID: 2312884987861070543, guid: 65fd38b2b7ffa124bbc9cf61e0538d51, type: 3}
   blueCubePrefab: {fileID: 8684768350748696294, guid: 90c3c450acc622d4f96a0b9ca765a8f9, type: 3}
   yellowCubePrefab: {fileID: 8780554869539664429, guid: a5fb9f1266ac4b945bf1775a8ccaad0f, type: 3}
-  redRocketHintPrefab: {fileID: 0}
-  greenRocketHintPrefab: {fileID: 0}
-  blueRocketHintPrefab: {fileID: 0}
-  yellowRocketHintPrefab: {fileID: 0}
-  horizontalRocketPrefab: {fileID: 0}
-  verticalRocketPrefab: {fileID: 0}
-  horizontalRocketPartPrefab: {fileID: 0}
-  verticalRocketPartPrefab: {fileID: 0}
+  redRocketHintPrefab: {fileID: 2585826321186210047, guid: 5914b76883d0c8641be6c33bfb754c57, type: 3}
+  greenRocketHintPrefab: {fileID: 5299463063369181154, guid: 1d9f3c60238207b49a472a8929ccf417, type: 3}
+  blueRocketHintPrefab: {fileID: 6224755541267269318, guid: ea1a7dc208acb6245bb90fbffe18af5f, type: 3}
+  yellowRocketHintPrefab: {fileID: 5550279667403031643, guid: a5574fcdf4735cf46891cddabc1d8523, type: 3}
+  horizontalRocketPrefab: {fileID: 2863490066099559561, guid: 5dd3af9e010c98b4cb0fc0e742cd86c1, type: 3}
+  verticalRocketPrefab: {fileID: 4347636053546277564, guid: a0d9454a968b2484daae5157de745e3b, type: 3}
+  horizontalRocketLeftPartPrefab: {fileID: 1851720157236239799, guid: 6e8881b1493e4674baba29e71764b7b2, type: 3}
+  horizontalRocketRightPartPrefab: {fileID: 1753950742806335391, guid: ee858b4c3bb9eae4498c649b5004109f, type: 3}
+  verticalRocketUpPartPrefab: {fileID: 3465429360736411525, guid: a3c3595bca0b18b4b9a0662fb27660ea, type: 3}
+  verticalRocketDownPartPrefab: {fileID: 1845211510024195487, guid: 4ede957159e1e9f439f6096ac8613e60, type: 3}
   boxPrefab: {fileID: 4102199147798950512, guid: e0c6a2604c291d24dad584d6de2f5aba, type: 3}
   stonePrefab: {fileID: 6463514956440257223, guid: 277fa034355d8c24baab7b7ea771fb05, type: 3}
   vasePrefab: {fileID: 2608457032037634377, guid: f81d0d0615724c44eaf7bf59a8b01351, type: 3}

@@ -24,8 +24,10 @@ public class GridManager : MonoBehaviour
     public GameObject yellowRocketHintPrefab;
     public GameObject horizontalRocketPrefab;
     public GameObject verticalRocketPrefab;
-    public GameObject horizontalRocketPartPrefab;
-    public GameObject verticalRocketPartPrefab;
+    public GameObject horizontalRocketLeftPartPrefab;
+    public GameObject horizontalRocketRightPartPrefab;
+    public GameObject verticalRocketUpPartPrefab;
+    public GameObject verticalRocketDownPartPrefab;
     public GameObject boxPrefab;
     public GameObject stonePrefab; 
     public GameObject vasePrefab;  
@@ -56,7 +58,8 @@ public class GridManager : MonoBehaviour
     private bool levelCompleted;
     void Start()
     {
-        LoadLevel(1); 
+        int selectedLevel = PlayerPrefs.GetInt("CurrentLevel", 1);
+        LoadLevel(Mathf.Clamp(selectedLevel, 1, 10));
     }
 
     public void LoadLevel(int levelNumber)
@@ -1038,13 +1041,15 @@ public class GridManager : MonoBehaviour
 
         if (direction == RocketDirection.Horizontal)
         {
-            SpawnRocketParts(originX, originY, Vector2Int.left, Vector2Int.right, horizontalRocketPartPrefab);
+            SpawnRocketPart(originX, originY, Vector2Int.left, horizontalRocketLeftPartPrefab);
+            SpawnRocketPart(originX, originY, Vector2Int.right, horizontalRocketRightPartPrefab);
             DamageLine(originX, originY, Vector2Int.left);
             DamageLine(originX, originY, Vector2Int.right);
         }
         else
         {
-            SpawnRocketParts(originX, originY, Vector2Int.down, Vector2Int.up, verticalRocketPartPrefab);
+            SpawnRocketPart(originX, originY, Vector2Int.down, verticalRocketDownPartPrefab);
+            SpawnRocketPart(originX, originY, Vector2Int.up, verticalRocketUpPartPrefab);
             DamageLine(originX, originY, Vector2Int.down);
             DamageLine(originX, originY, Vector2Int.up);
         }
@@ -1064,7 +1069,8 @@ public class GridManager : MonoBehaviour
                 continue;
             }
 
-            SpawnRocketParts(originX, y, Vector2Int.left, Vector2Int.right, horizontalRocketPartPrefab);
+            SpawnRocketPart(originX, y, Vector2Int.left, horizontalRocketLeftPartPrefab);
+            SpawnRocketPart(originX, y, Vector2Int.right, horizontalRocketRightPartPrefab);
             DamageCell(originX, y, null);
             DamageLine(originX, y, Vector2Int.left);
             DamageLine(originX, y, Vector2Int.right);
@@ -1077,7 +1083,8 @@ public class GridManager : MonoBehaviour
                 continue;
             }
 
-            SpawnRocketParts(x, originY, Vector2Int.down, Vector2Int.up, verticalRocketPartPrefab);
+            SpawnRocketPart(x, originY, Vector2Int.down, verticalRocketDownPartPrefab);
+            SpawnRocketPart(x, originY, Vector2Int.up, verticalRocketUpPartPrefab);
             DamageCell(x, originY, null);
             DamageLine(x, originY, Vector2Int.down);
             DamageLine(x, originY, Vector2Int.up);
@@ -1147,12 +1154,6 @@ public class GridManager : MonoBehaviour
         }
 
         Destroy(rocket.gameObject);
-    }
-
-    void SpawnRocketParts(int x, int y, Vector2Int firstDirection, Vector2Int secondDirection, GameObject prefab)
-    {
-        SpawnRocketPart(x, y, firstDirection, prefab);
-        SpawnRocketPart(x, y, secondDirection, prefab);
     }
 
     void SpawnRocketPart(int x, int y, Vector2Int direction, GameObject prefab)
