@@ -10,12 +10,22 @@ public class GridManager : MonoBehaviour
     public RectTransform gridBackgroundRect;
     public Transform cubesParent;
     public Transform obstaclesParent;
+    public Transform rocketHintsParent;
+    public Transform rocketsParent;
 
     [Header("Prefabs")]
     public GameObject redCubePrefab;
     public GameObject greenCubePrefab;
     public GameObject blueCubePrefab;
     public GameObject yellowCubePrefab;
+    public GameObject redRocketHintPrefab;
+    public GameObject greenRocketHintPrefab;
+    public GameObject blueRocketHintPrefab;
+    public GameObject yellowRocketHintPrefab;
+    public GameObject horizontalRocketPrefab;
+    public GameObject verticalRocketPrefab;
+    public GameObject horizontalRocketPartPrefab;
+    public GameObject verticalRocketPartPrefab;
     public GameObject boxPrefab;
     public GameObject stonePrefab; 
     public GameObject vasePrefab;  
@@ -26,17 +36,24 @@ public class GridManager : MonoBehaviour
     private LevelData currentLevelData;
     private Cube[,] allCubes;
     private Obstacle[,] allObstacles;
+    private Rocket[,] allRockets;
     private float contentScale = 1f;
     private float cellWidth = 1f;
     private float cellHeight = 1f;
     private const float GridPadding = 0.35f;
     private const float FallSpeed = 8f;
+    private const float RocketPartSpeed = 3f;
+    private const float RocketPartLifetime = 0.8f;
     private readonly string[] cubeTypes = { "r", "g", "b", "y" };
 
     [Header("UI References")]
     public TMPro.TextMeshProUGUI moveCounterText; // The counter for move (get from JSON file)
+    public TMPro.TextMeshProUGUI goalCounterText;
     public UnityEngine.UI.Image goalIconImage;     // The goal icon according to the level
     private int movesLeft; // This will change as we play
+    private string activeGoalType;
+    private int goalsLeft;
+    private bool levelCompleted;
     void Start()
     {
         LoadLevel(1); 
@@ -53,7 +70,9 @@ public class GridManager : MonoBehaviour
 
             //Initialized the counter
             movesLeft = currentLevelData.move_count;
+            InitializeGoal();
             UpdateMovesUI();   // helper function to update moves
+            UpdateGoalUI();
 
             // 1. Update the Move Counter (The number in the right box)
             if(moveCounterText != null)
@@ -78,10 +97,12 @@ public class GridManager : MonoBehaviour
             PrepareGridHierarchy();
             allCubes = new Cube[currentLevelData.grid_width, currentLevelData.grid_height];
             allObstacles = new Obstacle[currentLevelData.grid_width, currentLevelData.grid_height];
+            allRockets = new Rocket[currentLevelData.grid_width, currentLevelData.grid_height];
             
             ClearGrid();
             GenerateGrid();
             ResizeBackground();
+            RefreshRocketHints();
         }
         else
         {
@@ -111,6 +132,117 @@ public class GridManager : MonoBehaviour
     string GetRandomCubeType()
     {
         return cubeTypes[Random.Range(0, cubeTypes.Length)];
+    }
+
+    void InitializeGoal()
+    {
+        activeGoalType = currentLevelData.goal_type;
+        goalsLeft = currentLevelData.goal_count;
+        levelCompleted = false;
+
+        if (string.IsNullOrEmpty(activeGoalType))
+        {
+            activeGoalType = InferGoalTypeFromGrid();
+        }
+
+        if (goalsLeft <= 0)
+        {
+            goalsLeft = CountGoalsInGrid();
+        }
+    }
+
+    string InferGoalTypeFromGrid()
+    {
+        bool hasObstacle = false;
+
+        foreach (string itemType in currentLevelData.grid)
+        {
+            if (IsObstacleType(itemType))
+            {
+                hasObstacle = true;
+                break;
+            }
+        }
+
+        return hasObstacle ? "obstacle" : string.Empty;
+    }
+
+    int CountGoalsInGrid()
+    {
+        int count = 0;
+
+        foreach (string itemType in currentLevelData.grid)
+        {
+            if (IsGoalType(itemType))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    bool IsObstacleType(string type)
+    {
+        return type == "bo" || type == "s" || type == "v";
+    }
+
+    bool IsCubeType(string type)
+    {
+        return type == "r" || type == "g" || type == "b" || type == "y";
+    }
+
+    bool IsGoalType(string type)
+    {
+        if (string.IsNullOrEmpty(activeGoalType))
+        {
+            return false;
+        }
+
+        if (activeGoalType == "obstacle")
+        {
+            return IsObstacleType(type);
+        }
+
+        return type == activeGoalType;
+    }
+
+    void CollectGoal(string type)
+    {
+        if (levelCompleted || goalsLeft <= 0 || !IsGoalType(type))
+        {
+            return;
+        }
+
+        goalsLeft--;
+        UpdateGoalUI();
+
+        if (goalsLeft <= 0)
+        {
+            CompleteLevel();
+        }
+    }
+
+    void UpdateGoalUI()
+    {
+        if (goalCounterText != null)
+        {
+            goalCounterText.text = Mathf.Max(0, goalsLeft).ToString();
+        }
+    }
+
+    void CompleteLevel()
+    {
+        if (levelCompleted)
+        {
+            return;
+        }
+
+        levelCompleted = true;
+        int nextLevel = currentLevelData.level_number + 1;
+        PlayerPrefs.SetInt("CurrentLevel", nextLevel);
+        PlayerPrefs.Save();
+        Debug.Log($"Level {currentLevelData.level_number} complete!");
     }
 
     void PrepareGridHierarchy()
@@ -149,6 +281,8 @@ public class GridManager : MonoBehaviour
         AlignBackgroundToContentAnchor();
         cubesParent = GetOrCreateGridChild("Cubes", cubesParent);
         obstaclesParent = GetOrCreateGridChild("Obstacles", obstaclesParent);
+        rocketHintsParent = GetOrCreateGridChild("RocketHints", rocketHintsParent);
+        rocketsParent = GetOrCreateGridChild("Rockets", rocketsParent);
         UpdateContentParents();
     }
 
@@ -203,6 +337,8 @@ public class GridManager : MonoBehaviour
         contentScale = CalculateContentScale();
         ConfigureContentParent(cubesParent);
         ConfigureContentParent(obstaclesParent);
+        ConfigureContentParent(rocketHintsParent);
+        ConfigureContentParent(rocketsParent);
     }
 
     void ConfigureContentParent(Transform parent)
@@ -279,6 +415,8 @@ public class GridManager : MonoBehaviour
     {
         ClearChildren(cubesParent);
         ClearChildren(obstaclesParent);
+        ClearChildren(rocketHintsParent);
+        ClearChildren(rocketsParent);
     }
 
     void ClearChildren(Transform parent)
@@ -340,6 +478,7 @@ public class GridManager : MonoBehaviour
                 }
                 // Engel olan yerde küp olamaz, bu hücreyi küp dizisinde temizle
                 allCubes[x, y] = null;
+                allRockets[x, y] = null;
             }
             else
             {
@@ -353,6 +492,7 @@ public class GridManager : MonoBehaviour
                 }
                 // Küp olan yerde engel olamaz (başlangıç için)
                 allObstacles[x, y] = null;
+                allRockets[x, y] = null;
             }
         }
     }
@@ -383,6 +523,66 @@ public class GridManager : MonoBehaviour
         return cubeScript;
     }
 
+    Rocket SpawnRocketAt(int x, int y, RocketDirection direction)
+    {
+        GameObject prefab = direction == RocketDirection.Horizontal ? horizontalRocketPrefab : verticalRocketPrefab;
+        if (prefab == null || rocketsParent == null)
+        {
+            return null;
+        }
+
+        GameObject item = Instantiate(prefab, rocketsParent);
+        item.transform.localPosition = GetCellLocalPosition(x, y);
+        item.transform.localRotation = Quaternion.identity;
+        item.name = $"rocket_{direction}_{x}_{y}";
+
+        Rocket rocket = item.GetComponent<Rocket>();
+        if (rocket != null)
+        {
+            rocket.x = x;
+            rocket.y = y;
+            rocket.direction = direction;
+            allRockets[x, y] = rocket;
+            allCubes[x, y] = null;
+            allObstacles[x, y] = null;
+            UpdateRocketVisual(rocket, x, y, false);
+        }
+
+        return rocket;
+    }
+
+    RocketDirection GetRandomRocketDirection()
+    {
+        return Random.value < 0.5f ? RocketDirection.Horizontal : RocketDirection.Vertical;
+    }
+
+    void UpdateRocketVisual(Rocket rocket, int x, int y, bool animate = false)
+    {
+        if (rocket == null)
+        {
+            return;
+        }
+
+        rocket.x = x;
+        rocket.y = y;
+        Vector3 targetPosition = GetCellLocalPosition(x, y);
+
+        if (animate)
+        {
+            StartCoroutine(MoveCubeTo(rocket.transform, targetPosition));
+        }
+        else
+        {
+            rocket.transform.localPosition = targetPosition;
+        }
+
+        SpriteRenderer sr = rocket.GetComponent<SpriteRenderer>();
+        if (sr != null)
+        {
+            sr.sortingOrder = (y * 10) + x + 1;
+        }
+    }
+
     GameObject GetCubePrefab(string type)
     {
         switch (type)
@@ -392,6 +592,99 @@ public class GridManager : MonoBehaviour
             case "b": return blueCubePrefab;
             case "y": return yellowCubePrefab;
             default: return null;
+        }
+    }
+
+    GameObject GetRocketHintPrefab(string type)
+    {
+        switch (type)
+        {
+            case "r": return redRocketHintPrefab;
+            case "g": return greenRocketHintPrefab;
+            case "b": return blueRocketHintPrefab;
+            case "y": return yellowRocketHintPrefab;
+            default: return null;
+        }
+    }
+
+    void RefreshRocketHints()
+    {
+        ClearChildren(rocketHintsParent);
+
+        if (rocketHintsParent == null || currentLevelData == null || allCubes == null)
+        {
+            return;
+        }
+
+        HashSet<Cube> visited = new HashSet<Cube>();
+
+        for (int y = 0; y < currentLevelData.grid_height; y++)
+        {
+            for (int x = 0; x < currentLevelData.grid_width; x++)
+            {
+                Cube cube = allCubes[x, y];
+                if (cube == null || visited.Contains(cube))
+                {
+                    continue;
+                }
+
+                List<Cube> group = new List<Cube>();
+                FindConnectedCubes(cube.x, cube.y, cube.color, group);
+
+                foreach (Cube groupCube in group)
+                {
+                    visited.Add(groupCube);
+                }
+
+                if (group.Count >= 4)
+                {
+                    SpawnRocketHintsForGroup(group);
+                }
+            }
+        }
+    }
+
+    void FindConnectedCubes(int x, int y, string color, List<Cube> connected)
+    {
+        if (x < 0 || x >= currentLevelData.grid_width || y < 0 || y >= currentLevelData.grid_height)
+        {
+            return;
+        }
+
+        Cube cube = allCubes[x, y];
+        if (cube == null || connected.Contains(cube) || cube.color != color)
+        {
+            return;
+        }
+
+        connected.Add(cube);
+
+        FindConnectedCubes(x + 1, y, color, connected);
+        FindConnectedCubes(x - 1, y, color, connected);
+        FindConnectedCubes(x, y + 1, color, connected);
+        FindConnectedCubes(x, y - 1, color, connected);
+    }
+
+    void SpawnRocketHintsForGroup(List<Cube> group)
+    {
+        foreach (Cube cube in group)
+        {
+            GameObject prefab = GetRocketHintPrefab(cube.color);
+            if (prefab == null)
+            {
+                continue;
+            }
+
+            GameObject hint = Instantiate(prefab, rocketHintsParent);
+            hint.transform.localPosition = GetCellLocalPosition(cube.x, cube.y);
+            hint.transform.localRotation = Quaternion.identity;
+            hint.name = $"rocket_hint_{cube.color}_{cube.x}_{cube.y}";
+
+            SpriteRenderer sr = hint.GetComponent<SpriteRenderer>();
+            if (sr != null)
+            {
+                sr.sortingOrder = (cube.y * 10) + cube.x + 2;
+            }
         }
     }
 
@@ -463,15 +756,23 @@ public class GridManager : MonoBehaviour
 
     public void OnCubeClicked(Cube clickedCube)
     {
+        if (levelCompleted)
+        {
+            return;
+        }
+
         List<Cube> matches = new List<Cube>();
         FindMatches(clickedCube.x, clickedCube.y, clickedCube.color, matches);
 
         if (matches.Count >= 2)
         {
+            ClearChildren(rocketHintsParent);
             DecrementMoves();
+            bool shouldCreateRocket = matches.Count >= 4;
             
             // Bu sette hasar alanları tutarak aynı hamlede bir objeye birden fazla hasar gitmesini engelliyoruz
             HashSet<Obstacle> obstaclesToDamage = new HashSet<Obstacle>();
+            Vector3 rocketCreatePosition = GetCellLocalPosition(clickedCube.x, clickedCube.y);
 
             foreach (Cube c in matches)
             {
@@ -494,8 +795,17 @@ public class GridManager : MonoBehaviour
                 }
 
                 // Küpü diziden ve sahneden kaldır
+                CollectGoal(c.color);
                 allCubes[c.x, c.y] = null;
-                Destroy(c.gameObject);
+
+                if (shouldCreateRocket)
+                {
+                    StartCoroutine(MoveAndDestroyCube(c.transform, rocketCreatePosition));
+                }
+                else
+                {
+                    Destroy(c.gameObject);
+                }
             }
 
             // Belirlenen obstacle'lara hasar ver
@@ -505,6 +815,7 @@ public class GridManager : MonoBehaviour
                 
                 if (obs.health <= 0)
                 {
+                    CollectGoal(obs.obstacleType);
                     // Eğer öldüyse referansını temizle
                     // Not: Obstacle scriptinin içinde x ve y koordinatlarını tutuyor olmalısın
                     // Eğer tutmuyorsan Obstacle class'ına da x,y eklemelisin.
@@ -513,7 +824,34 @@ public class GridManager : MonoBehaviour
                 }
             }
 
-            ApplyGravity();
+            if (shouldCreateRocket && !levelCompleted)
+            {
+                SpawnRocketAt(clickedCube.x, clickedCube.y, GetRandomRocketDirection());
+            }
+
+            if (!levelCompleted)
+            {
+                ApplyGravity();
+                RefreshRocketHints();
+            }
+        }
+    }
+
+    IEnumerator MoveAndDestroyCube(Transform cubeTransform, Vector3 targetPosition)
+    {
+        while (cubeTransform != null && Vector3.Distance(cubeTransform.localPosition, targetPosition) > 0.01f)
+        {
+            cubeTransform.localPosition = Vector3.MoveTowards(
+                cubeTransform.localPosition,
+                targetPosition,
+                FallSpeed * Time.deltaTime
+            );
+            yield return null;
+        }
+
+        if (cubeTransform != null)
+        {
+            Destroy(cubeTransform.gameObject);
         }
     }
 
@@ -595,7 +933,8 @@ public class GridManager : MonoBehaviour
                 }
 
                 Cube cube = allCubes[x, y];
-                if (cube == null)
+                Rocket rocket = allRockets[x, y];
+                if (cube == null && rocket == null)
                 {
                     continue;
                 }
@@ -603,22 +942,234 @@ public class GridManager : MonoBehaviour
                 if (y != targetY)
                 {
                     allCubes[x, targetY] = cube;
+                    allRockets[x, targetY] = rocket;
                     allCubes[x, y] = null;
+                    allRockets[x, y] = null;
                 }
 
-                UpdateCubeVisual(cube, x, targetY, true);
+                if (cube != null)
+                {
+                    UpdateCubeVisual(cube, x, targetY, true);
+                }
+
+                if (rocket != null)
+                {
+                    UpdateRocketVisual(rocket, x, targetY, true);
+                }
+
                 targetY++;
             }
 
             for (int y = targetY; y < currentLevelData.grid_height; y++)
             {
-                if (allObstacles[x, y] != null || allCubes[x, y] != null)
+                if (allObstacles[x, y] != null || allCubes[x, y] != null || allRockets[x, y] != null)
                 {
                     continue;
                 }
 
                 SpawnCubeAt(GetRandomCubeType(), x, y, currentLevelData.grid_height - y);
             }
+        }
+    }
+
+    public void OnRocketClicked(Rocket rocket)
+    {
+        if (levelCompleted || rocket == null)
+        {
+            return;
+        }
+
+        ClearChildren(rocketHintsParent);
+        DecrementMoves();
+
+        List<Rocket> comboRockets = new List<Rocket>();
+        FindAdjacentRockets(rocket.x, rocket.y, comboRockets);
+
+        if (comboRockets.Count >= 2)
+        {
+            ExplodeRocketCombo(comboRockets, rocket.x, rocket.y);
+        }
+        else
+        {
+            ExplodeRocket(rocket);
+        }
+
+        if (!levelCompleted)
+        {
+            ApplyGravity();
+            RefreshRocketHints();
+        }
+    }
+
+    void FindAdjacentRockets(int x, int y, List<Rocket> rockets)
+    {
+        if (x < 0 || x >= currentLevelData.grid_width || y < 0 || y >= currentLevelData.grid_height)
+        {
+            return;
+        }
+
+        Rocket rocket = allRockets[x, y];
+        if (rocket == null || rockets.Contains(rocket))
+        {
+            return;
+        }
+
+        rockets.Add(rocket);
+
+        FindAdjacentRockets(x + 1, y, rockets);
+        FindAdjacentRockets(x - 1, y, rockets);
+        FindAdjacentRockets(x, y + 1, rockets);
+        FindAdjacentRockets(x, y - 1, rockets);
+    }
+
+    void ExplodeRocket(Rocket rocket)
+    {
+        if (rocket == null)
+        {
+            return;
+        }
+
+        int originX = rocket.x;
+        int originY = rocket.y;
+        RocketDirection direction = rocket.direction;
+
+        RemoveRocket(rocket);
+        DamageCell(originX, originY, null);
+
+        if (direction == RocketDirection.Horizontal)
+        {
+            SpawnRocketParts(originX, originY, Vector2Int.left, Vector2Int.right, horizontalRocketPartPrefab);
+            DamageLine(originX, originY, Vector2Int.left);
+            DamageLine(originX, originY, Vector2Int.right);
+        }
+        else
+        {
+            SpawnRocketParts(originX, originY, Vector2Int.down, Vector2Int.up, verticalRocketPartPrefab);
+            DamageLine(originX, originY, Vector2Int.down);
+            DamageLine(originX, originY, Vector2Int.up);
+        }
+    }
+
+    void ExplodeRocketCombo(List<Rocket> comboRockets, int originX, int originY)
+    {
+        foreach (Rocket rocket in comboRockets)
+        {
+            RemoveRocket(rocket);
+        }
+
+        for (int y = originY - 1; y <= originY + 1; y++)
+        {
+            if (y < 0 || y >= currentLevelData.grid_height)
+            {
+                continue;
+            }
+
+            SpawnRocketParts(originX, y, Vector2Int.left, Vector2Int.right, horizontalRocketPartPrefab);
+            DamageCell(originX, y, null);
+            DamageLine(originX, y, Vector2Int.left);
+            DamageLine(originX, y, Vector2Int.right);
+        }
+
+        for (int x = originX - 1; x <= originX + 1; x++)
+        {
+            if (x < 0 || x >= currentLevelData.grid_width)
+            {
+                continue;
+            }
+
+            SpawnRocketParts(x, originY, Vector2Int.down, Vector2Int.up, verticalRocketPartPrefab);
+            DamageCell(x, originY, null);
+            DamageLine(x, originY, Vector2Int.down);
+            DamageLine(x, originY, Vector2Int.up);
+        }
+    }
+
+    void DamageLine(int startX, int startY, Vector2Int direction)
+    {
+        int x = startX + direction.x;
+        int y = startY + direction.y;
+
+        while (x >= 0 && x < currentLevelData.grid_width && y >= 0 && y < currentLevelData.grid_height)
+        {
+            DamageCell(x, y, null);
+            x += direction.x;
+            y += direction.y;
+        }
+    }
+
+    void DamageCell(int x, int y, Rocket sourceRocket)
+    {
+        if (x < 0 || x >= currentLevelData.grid_width || y < 0 || y >= currentLevelData.grid_height)
+        {
+            return;
+        }
+
+        Rocket rocket = allRockets[x, y];
+        if (rocket != null && rocket != sourceRocket)
+        {
+            ExplodeRocket(rocket);
+            return;
+        }
+
+        Obstacle obstacle = allObstacles[x, y];
+        if (obstacle != null)
+        {
+            obstacle.TakeDamage();
+
+            if (obstacle.health <= 0)
+            {
+                CollectGoal(obstacle.obstacleType);
+                allObstacles[x, y] = null;
+            }
+
+            return;
+        }
+
+        Cube cube = allCubes[x, y];
+        if (cube != null)
+        {
+            CollectGoal(cube.color);
+            allCubes[x, y] = null;
+            Destroy(cube.gameObject);
+        }
+    }
+
+    void RemoveRocket(Rocket rocket)
+    {
+        if (rocket == null)
+        {
+            return;
+        }
+
+        if (rocket.x >= 0 && rocket.x < currentLevelData.grid_width && rocket.y >= 0 && rocket.y < currentLevelData.grid_height)
+        {
+            allRockets[rocket.x, rocket.y] = null;
+        }
+
+        Destroy(rocket.gameObject);
+    }
+
+    void SpawnRocketParts(int x, int y, Vector2Int firstDirection, Vector2Int secondDirection, GameObject prefab)
+    {
+        SpawnRocketPart(x, y, firstDirection, prefab);
+        SpawnRocketPart(x, y, secondDirection, prefab);
+    }
+
+    void SpawnRocketPart(int x, int y, Vector2Int direction, GameObject prefab)
+    {
+        if (prefab == null || rocketsParent == null)
+        {
+            return;
+        }
+
+        GameObject part = Instantiate(prefab, rocketsParent);
+        part.transform.localPosition = GetCellLocalPosition(x, y);
+        part.transform.localRotation = Quaternion.identity;
+
+        RocketPart rocketPart = part.GetComponent<RocketPart>();
+        if (rocketPart != null)
+        {
+            rocketPart.Initialize(new Vector3(direction.x * cellWidth, direction.y * cellHeight, 0f), RocketPartSpeed, RocketPartLifetime);
         }
     }
 
