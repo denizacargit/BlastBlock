@@ -3,6 +3,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+[InitializeOnLoad]
 public class LevelEditorTools : EditorWindow
 {
     private const int MinLevel = 1;
@@ -12,6 +13,11 @@ public class LevelEditorTools : EditorWindow
     private const string LevelSceneName = "LevelScene";
 
     private int selectedLevel = MinLevel;
+
+    static LevelEditorTools()
+    {
+        SetMainSceneAsPlayModeStartScene();
+    }
 
     [MenuItem("Menu/Level Selector")]
     public static void ShowWindow()
@@ -26,6 +32,13 @@ public class LevelEditorTools : EditorWindow
     public static void ResetToLevelOne()
     {
         SetCurrentLevel(MinLevel);
+    }
+
+    [MenuItem("Menu/Use MainScene On Play")]
+    public static void SetMainSceneAsPlayModeStartScene()
+    {
+        SceneAsset mainScene = AssetDatabase.LoadAssetAtPath<SceneAsset>("Assets/Scenes/MainScene.unity");
+        EditorSceneManager.playModeStartScene = mainScene;
     }
 
     void OnGUI()

@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 public class GridManager : MonoBehaviour
 {
@@ -12,6 +13,11 @@ public class GridManager : MonoBehaviour
     public Transform obstaclesParent;
     public Transform rocketHintsParent;
     public Transform rocketsParent;
+    public GameObject celebrationPrefab;
+    public GameObject failPopup;
+
+    [Header("Grid Layout")]
+    public float gridVisualScale = 180f;
 
     [Header("Prefabs")]
     public GameObject redCubePrefab;
@@ -42,20 +48,32 @@ public class GridManager : MonoBehaviour
     private float contentScale = 1f;
     private float cellWidth = 1f;
     private float cellHeight = 1f;
-    private const float GridPadding = 0.35f;
+    private const float GridPadding = 0.33f;
     private const float FallSpeed = 8f;
     private const float RocketPartSpeed = 3f;
     private const float RocketPartLifetime = 0.8f;
+    private const float WinReturnDelay = 1.5f;
     private readonly string[] cubeTypes = { "r", "g", "b", "y" };
+    private readonly string[] obstacleGoalTypes = { "s", "bo", "v" };
 
     [Header("UI References")]
     public TMPro.TextMeshProUGUI moveCounterText; // The counter for move (get from JSON file)
     public TMPro.TextMeshProUGUI goalCounterText;
     public UnityEngine.UI.Image goalIconImage;     // The goal icon according to the level
+    public Transform goalSlotsParent;
+    public GoalSlotUI goalSlotPrefab;
+    public Sprite genericObstacleGoalIcon;
     private int movesLeft; // This will change as we play
-    private string activeGoalType;
-    private int goalsLeft;
+    private readonly List<GoalState> activeGoals = new List<GoalState>();
     private bool levelCompleted;
+
+    private class GoalState
+    {
+        public string type;
+        public int remaining;
+        public GoalSlotUI slot;
+    }
+
     void Start()
     {
         int selectedLevel = PlayerPrefs.GetInt("CurrentLevel", 1);
@@ -73,9 +91,9 @@ public class GridManager : MonoBehaviour
 
             //Initialized the counter
             movesLeft = currentLevelData.move_count;
-            InitializeGoal();
+            InitializeGoals();
             UpdateMovesUI();   // helper function to update moves
-            UpdateGoalUI();
+            HideFailPopup();
 
             // 1. Update the Move Counter (The number in the right box)
             if(moveCounterText != null)
@@ -84,17 +102,6 @@ public class GridManager : MonoBehaviour
             }
             
 
-            if (goalIconImage != null)
-            {
-                // Load the sprite for the goal icon based on the JSON goal type
-                // This assumes you have sprites in Resources/Sprites/Icons named like "r_icon"
-                Sprite goalSprite = Resources.Load<Sprite>("Sprites/Icons/" + currentLevelData.goal_type + "_icon");
-                if (goalSprite != null)
-                {
-                    goalIconImage.sprite = goalSprite;
-                }
-            }
-            
             // 3. Initialize Grid Logic
             CalculateCellSizeFromBoxPrefab();
             PrepareGridHierarchy();
@@ -137,46 +144,181 @@ public class GridManager : MonoBehaviour
         return cubeTypes[Random.Range(0, cubeTypes.Length)];
     }
 
-    void InitializeGoal()
+    void InitializeGoals()
     {
-        activeGoalType = currentLevelData.goal_type;
-        goalsLeft = currentLevelData.goal_count;
+        activeGoals.Clear();
         levelCompleted = false;
+        ClearGoalSlots();
 
-        if (string.IsNullOrEmpty(activeGoalType))
+        AddObstacleGoalsFromGrid();
+
+        if (activeGoals.Count == 0 && currentLevelData.goals != null && currentLevelData.goals.Length > 0)
         {
-            activeGoalType = InferGoalTypeFromGrid();
-        }
-
-        if (goalsLeft <= 0)
-        {
-            goalsLeft = CountGoalsInGrid();
-        }
-    }
-
-    string InferGoalTypeFromGrid()
-    {
-        bool hasObstacle = false;
-
-        foreach (string itemType in currentLevelData.grid)
-        {
-            if (IsObstacleType(itemType))
+            foreach (GoalData goalData in currentLevelData.goals)
             {
-                hasObstacle = true;
-                break;
+                if (goalData != null)
+                {
+                    AddGoal(goalData.type, goalData.count);
+                }
             }
         }
+        else if (activeGoals.Count == 0 && !string.IsNullOrEmpty(currentLevelData.goal_type))
+        {
+            AddGoal(currentLevelData.goal_type, currentLevelData.goal_count);
+        }
 
-        return hasObstacle ? "obstacle" : string.Empty;
+        UpdateLegacyGoalUI();
+        PositionGoalSlots();
     }
 
-    int CountGoalsInGrid()
+    void AddObstacleGoalsFromGrid()
+    {
+        foreach (string goalType in obstacleGoalTypes)
+        {
+            int count = CountGoalsForType(goalType);
+
+            if (count > 0)
+            {
+                AddGoal(goalType, count);
+            }
+        }
+    }
+
+    void ClearGoalSlots()
+    {
+        if (goalSlotsParent == null)
+        {
+            return;
+        }
+
+        for (int i = goalSlotsParent.childCount - 1; i >= 0; i--)
+        {
+            Destroy(goalSlotsParent.GetChild(i).gameObject);
+        }
+    }
+
+    void AddGoal(string type, int count)
+    {
+        if (string.IsNullOrEmpty(type))
+        {
+            return;
+        }
+
+        int resolvedCount = count > 0 ? count : CountGoalsForType(type);
+        GoalSlotUI prefab = goalSlotPrefab != null ? goalSlotPrefab : Resources.Load<GoalSlotUI>("Cubes/GoalSlot");
+        GoalState state = new GoalState
+        {
+            type = type,
+            remaining = resolvedCount
+        };
+
+        if (prefab != null && goalSlotsParent != null)
+        {
+            GoalSlotUI slot = Instantiate(prefab, goalSlotsParent);
+            slot.Setup(LoadGoalIcon(type), resolvedCount);
+            state.slot = slot;
+        }
+
+        activeGoals.Add(state);
+    }
+
+    Sprite LoadGoalIcon(string type)
+    {
+        Sprite icon = Resources.Load<Sprite>("Sprites/Icons/" + type + "_icon");
+
+        if (icon == null)
+        {
+            icon = Resources.Load<Sprite>(GetDefaultGoalIconPath(type));
+        }
+
+        if (icon == null && type == "obstacle")
+        {
+            icon = genericObstacleGoalIcon;
+        }
+
+        return icon;
+    }
+
+    string GetDefaultGoalIconPath(string type)
+    {
+        switch (type)
+        {
+            case "bo":
+                return "Obstacles/Box/box";
+            case "s":
+                return "Obstacles/Stone/stone";
+            case "v":
+                return "Obstacles/Vase/vase_01";
+            default:
+                return string.Empty;
+        }
+    }
+
+    void PositionGoalSlots()
+    {
+        int totalCount = Mathf.Min(activeGoals.Count, 3);
+
+        for (int i = 0; i < totalCount; i++)
+        {
+            GoalSlotUI slot = activeGoals[i].slot;
+
+            if (slot == null)
+            {
+                continue;
+            }
+
+            RectTransform rect = slot.GetComponent<RectTransform>();
+
+            if (rect == null)
+            {
+                continue;
+            }
+
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            ApplyGoalSlotLayout(rect, i, totalCount);
+        }
+    }
+
+    void ApplyGoalSlotLayout(RectTransform rect, int index, int totalCount)
+    {
+        if (totalCount == 1)
+        {
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(72f, 72f);
+            return;
+        }
+
+        if (totalCount == 2)
+        {
+            float x = index == 0 ? -32f : 32f;
+            rect.anchoredPosition = new Vector2(x, 4f);
+            rect.sizeDelta = new Vector2(58f, 58f);
+            return;
+        }
+
+        if (totalCount == 3)
+        {
+            Vector2[] positions =
+            {
+                new Vector2(-30f, 18f),
+                new Vector2(30f, 18f),
+                new Vector2(0f, -28f)
+            };
+
+            rect.anchoredPosition = positions[index];
+            rect.sizeDelta = new Vector2(50f, 50f);
+        }
+    }
+
+    int CountGoalsForType(string goalType)
     {
         int count = 0;
 
         foreach (string itemType in currentLevelData.grid)
         {
-            if (IsGoalType(itemType))
+            if (DoesTypeMatchGoal(itemType, goalType))
             {
                 count++;
             }
@@ -195,42 +337,99 @@ public class GridManager : MonoBehaviour
         return type == "r" || type == "g" || type == "b" || type == "y";
     }
 
-    bool IsGoalType(string type)
+    bool DoesTypeMatchGoal(string itemType, string goalType)
     {
-        if (string.IsNullOrEmpty(activeGoalType))
+        if (string.IsNullOrEmpty(itemType) || string.IsNullOrEmpty(goalType))
         {
             return false;
         }
 
-        if (activeGoalType == "obstacle")
+        if (goalType == "obstacle")
         {
-            return IsObstacleType(type);
+            return IsObstacleType(itemType);
         }
 
-        return type == activeGoalType;
+        return itemType == goalType;
     }
 
     void CollectGoal(string type)
     {
-        if (levelCompleted || goalsLeft <= 0 || !IsGoalType(type))
+        if (levelCompleted)
         {
             return;
         }
 
-        goalsLeft--;
-        UpdateGoalUI();
+        bool changed = false;
 
-        if (goalsLeft <= 0)
+        foreach (GoalState goal in activeGoals)
+        {
+            if (goal.remaining <= 0 || !DoesTypeMatchGoal(type, goal.type))
+            {
+                continue;
+            }
+
+            goal.remaining--;
+            changed = true;
+
+            if (goal.slot != null)
+            {
+                goal.slot.SetCount(goal.remaining);
+            }
+        }
+
+        if (!changed)
+        {
+            return;
+        }
+
+        UpdateLegacyGoalUI();
+
+        if (AreAllGoalsComplete())
         {
             CompleteLevel();
         }
     }
 
-    void UpdateGoalUI()
+    bool AreAllGoalsComplete()
     {
+        if (activeGoals.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (GoalState goal in activeGoals)
+        {
+            if (goal.remaining > 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    void UpdateLegacyGoalUI()
+    {
+        int totalRemaining = 0;
+
+        foreach (GoalState goal in activeGoals)
+        {
+            totalRemaining += Mathf.Max(0, goal.remaining);
+        }
+
         if (goalCounterText != null)
         {
-            goalCounterText.text = Mathf.Max(0, goalsLeft).ToString();
+            goalCounterText.text = totalRemaining.ToString();
+        }
+
+        if (goalIconImage != null && activeGoals.Count > 0)
+        {
+            Sprite icon = LoadGoalIcon(activeGoals[0].type);
+
+            if (icon != null)
+            {
+                goalIconImage.sprite = icon;
+            }
         }
     }
 
@@ -246,6 +445,19 @@ public class GridManager : MonoBehaviour
         PlayerPrefs.SetInt("CurrentLevel", nextLevel);
         PlayerPrefs.Save();
         Debug.Log($"Level {currentLevelData.level_number} complete!");
+
+        if (celebrationPrefab != null)
+        {
+            Instantiate(celebrationPrefab, transform.position, Quaternion.identity);
+        }
+
+        StartCoroutine(ReturnToMainSceneAfterDelay());
+    }
+
+    IEnumerator ReturnToMainSceneAfterDelay()
+    {
+        yield return new WaitForSeconds(WinReturnDelay);
+        SceneManager.LoadScene("MainScene");
     }
 
     void PrepareGridHierarchy()
@@ -366,17 +578,7 @@ public class GridManager : MonoBehaviour
 
     float CalculateContentScale()
     {
-        Canvas canvas = gridBackgroundRect != null ? gridBackgroundRect.GetComponentInParent<Canvas>() : null;
-        if (canvas != null)
-        {
-            UnityEngine.UI.CanvasScaler canvasScaler = canvas.GetComponent<UnityEngine.UI.CanvasScaler>();
-            if (canvasScaler != null)
-            {
-                return canvasScaler.referencePixelsPerUnit;
-            }
-        }
-
-        return 100f;
+        return gridVisualScale;
     }
 
     void CalculateCellSizeFromBoxPrefab()
@@ -437,6 +639,18 @@ public class GridManager : MonoBehaviour
 
     void SpawnItem(string type, int x, int y)
     {
+        if (type == "hro")
+        {
+            SpawnRocketAt(x, y, RocketDirection.Horizontal);
+            return;
+        }
+
+        if (type == "vro")
+        {
+            SpawnRocketAt(x, y, RocketDirection.Vertical);
+            return;
+        }
+
         GameObject prefab = null;
         bool isObstacle = false;
 
@@ -867,9 +1081,36 @@ public class GridManager : MonoBehaviour
         if (movesLeft <= 0)
         {
             Debug.Log("Out of moves! Game over");
-            // Trigger "Game over" UI in here.
-        
+            ShowFailPopup();
         }
+    }
+
+    void ShowFailPopup()
+    {
+        levelCompleted = true;
+
+        if (failPopup != null)
+        {
+            failPopup.SetActive(true);
+        }
+    }
+
+    void HideFailPopup()
+    {
+        if (failPopup != null)
+        {
+            failPopup.SetActive(false);
+        }
+    }
+
+    public void RetryLevel()
+    {
+        SceneManager.LoadScene("LevelScene");
+    }
+
+    public void ReturnToMainScene()
+    {
+        SceneManager.LoadScene("MainScene");
     }
 
     void UpdateMovesUI()
