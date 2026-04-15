@@ -51,7 +51,8 @@ public partial class GridManager : MonoBehaviour
     public int cubeParticleCount = 13;
     public float cubeParticleScale = 0.22f;
     public float particleLifetime = 0.6f;
-    public int rocketTrailStarsPerCell = 30;
+    public int rocketTrailStarsPerCell = 15;
+    public int comboRocketTrailStarsPerCell = 6;
     public float bigRocketTrailStarScale = 0.095f;
     public float rocketTrailJitter = 0.045f;
     public float rocketTrailDestroyInterval = 0.00025f;

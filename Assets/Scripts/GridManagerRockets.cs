@@ -102,6 +102,8 @@ public partial class GridManager
         }
 
         List<Coroutine> activeLines = new List<Coroutine>();
+        HashSet<Vector2Int> damagedCells = new HashSet<Vector2Int>();
+        int comboTrailStars = Mathf.Max(0, comboRocketTrailStarsPerCell);
 
         for (int y = originY - 1; y <= originY + 1; y++)
         {
@@ -110,9 +112,9 @@ public partial class GridManager
                 continue;
             }
 
-            DamageCell(originX, y, null);
-            activeLines.Add(StartCoroutine(AnimateRocketLine(originX, y, Vector2Int.left, horizontalRocketLeftPartPrefab)));
-            activeLines.Add(StartCoroutine(AnimateRocketLine(originX, y, Vector2Int.right, horizontalRocketRightPartPrefab)));
+            DamageCellOnce(originX, y, damagedCells);
+            activeLines.Add(StartCoroutine(AnimateRocketLine(originX, y, Vector2Int.left, horizontalRocketLeftPartPrefab, damagedCells, comboTrailStars)));
+            activeLines.Add(StartCoroutine(AnimateRocketLine(originX, y, Vector2Int.right, horizontalRocketRightPartPrefab, damagedCells, comboTrailStars)));
         }
 
         for (int x = originX - 1; x <= originX + 1; x++)
@@ -122,9 +124,9 @@ public partial class GridManager
                 continue;
             }
 
-            DamageCell(x, originY, null);
-            activeLines.Add(StartCoroutine(AnimateRocketLine(x, originY, Vector2Int.down, verticalRocketDownPartPrefab)));
-            activeLines.Add(StartCoroutine(AnimateRocketLine(x, originY, Vector2Int.up, verticalRocketUpPartPrefab)));
+            DamageCellOnce(x, originY, damagedCells);
+            activeLines.Add(StartCoroutine(AnimateRocketLine(x, originY, Vector2Int.down, verticalRocketDownPartPrefab, damagedCells, comboTrailStars)));
+            activeLines.Add(StartCoroutine(AnimateRocketLine(x, originY, Vector2Int.up, verticalRocketUpPartPrefab, damagedCells, comboTrailStars)));
         }
 
         foreach (Coroutine line in activeLines)
@@ -134,7 +136,7 @@ public partial class GridManager
     }
 
     // Moves one rocket half across the board.
-    IEnumerator AnimateRocketLine(int startX, int startY, Vector2Int direction, GameObject prefab)
+    IEnumerator AnimateRocketLine(int startX, int startY, Vector2Int direction, GameObject prefab, HashSet<Vector2Int> damagedCells = null, int trailStarsPerCell = -1)
     {
         GameObject part = SpawnRocketPart(startX, startY, prefab);
         if (part == null)
@@ -150,10 +152,10 @@ public partial class GridManager
         while (x >= 0 && x < currentLevelData.grid_width && y >= 0 && y < currentLevelData.grid_height)
         {
             SetRocketPartSortingOrder(part, x, y);
-            DamageCell(x, y, null);
+            DamageCellOnce(x, y, damagedCells);
 
             Vector3 targetPosition = GetCellLocalPosition(x, y);
-            SpawnRocketTrailSegment(previousPosition, targetPosition, direction, trailStars, x, y);
+            SpawnRocketTrailSegment(previousPosition, targetPosition, direction, trailStars, x, y, trailStarsPerCell);
             while (part != null && Vector3.Distance(part.transform.localPosition, targetPosition) > 0.01f)
             {
                 part.transform.localPosition = Vector3.MoveTowards(
@@ -177,7 +179,7 @@ public partial class GridManager
         }
 
         Vector3 exitPosition = previousPosition + new Vector3(direction.x * cellWidth * 0.5f, direction.y * cellHeight * 0.5f, 0f);
-        SpawnRocketTrailSegment(previousPosition, exitPosition, direction, trailStars, Mathf.Clamp(x - direction.x, 0, currentLevelData.grid_width - 1), Mathf.Clamp(y - direction.y, 0, currentLevelData.grid_height - 1));
+        SpawnRocketTrailSegment(previousPosition, exitPosition, direction, trailStars, Mathf.Clamp(x - direction.x, 0, currentLevelData.grid_width - 1), Mathf.Clamp(y - direction.y, 0, currentLevelData.grid_height - 1), trailStarsPerCell);
         while (part != null && Vector3.Distance(part.transform.localPosition, exitPosition) > 0.01f)
         {
             part.transform.localPosition = Vector3.MoveTowards(
@@ -194,6 +196,24 @@ public partial class GridManager
         }
 
         yield return DestroyRocketTrail(trailStars);
+    }
+
+    // Damages a combo cell only once.
+    void DamageCellOnce(int x, int y, HashSet<Vector2Int> damagedCells)
+    {
+        if (damagedCells == null)
+        {
+            DamageCell(x, y, null);
+            return;
+        }
+
+        Vector2Int cell = new Vector2Int(x, y);
+        if (!damagedCells.Add(cell))
+        {
+            return;
+        }
+
+        DamageCell(x, y, null);
     }
 
     // Damages one board cell.
@@ -284,9 +304,10 @@ public partial class GridManager
     }
 
     // Places star trail along one segment.
-    void SpawnRocketTrailSegment(Vector3 start, Vector3 end, Vector2Int direction, List<GameObject> trailStars, int x, int y)
+    void SpawnRocketTrailSegment(Vector3 start, Vector3 end, Vector2Int direction, List<GameObject> trailStars, int x, int y, int starsPerCell = -1)
     {
-        if (rocketsParent == null || rocketTrailStarsPerCell <= 0)
+        int starCount = starsPerCell >= 0 ? starsPerCell : rocketTrailStarsPerCell;
+        if (rocketsParent == null || starCount <= 0)
         {
             return;
         }
@@ -300,9 +321,9 @@ public partial class GridManager
         Vector3 perpendicular = direction.x != 0 ? Vector3.up : Vector3.right;
         int sortingOrder = GetBoardSortingOrder(x, y, 19);
 
-        for (int i = 0; i < rocketTrailStarsPerCell; i++)
+        for (int i = 0; i < starCount; i++)
         {
-            float t = (i + Random.Range(0.15f, 0.85f)) / rocketTrailStarsPerCell;
+            float t = (i + Random.Range(0.15f, 0.85f)) / starCount;
             Vector3 position = Vector3.Lerp(start, end, t);
             position += perpendicular * Random.Range(-rocketTrailJitter, rocketTrailJitter);
 
