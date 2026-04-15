@@ -128,10 +128,11 @@ public partial class GridManager
                 // Küpü diziden ve sahneden kaldır
                 CollectGoal(c.color);
                 allCubes[c.x, c.y] = null;
+                SpawnCubeParticles(c.color, GetCellLocalPosition(c.x, c.y), c.x, c.y);
 
                 if (shouldCreateRocket)
                 {
-                    StartCoroutine(MoveAndDestroyCube(c.transform, rocketCreatePosition));
+                    StartCoroutine(MoveAndDestroyCube(c, rocketCreatePosition));
                 }
                 else
                 {
@@ -142,17 +143,7 @@ public partial class GridManager
             // Belirlenen obstacle'lara hasar ver
             foreach (Obstacle obs in obstaclesToDamage)
             {
-                  obs.TakeDamage(); 
-                
-                if (obs.health <= 0)
-                {
-                    CollectGoal(obs.obstacleType);
-                    // Eğer öldüyse referansını temizle
-                    // Not: Obstacle scriptinin içinde x ve y koordinatlarını tutuyor olmalısın
-                    // Eğer tutmuyorsan Obstacle class'ına da x,y eklemelisin.
-                    // Şimdilik koordinatları bildiğimizi varsayalım:
-                    // allObstacles[obs.x, obs.y] = null; 
-                }
+                DamageObstacle(obs);
             }
 
             if (shouldCreateRocket && !levelCompleted)
@@ -168,8 +159,10 @@ public partial class GridManager
         }
     }
 
-    IEnumerator MoveAndDestroyCube(Transform cubeTransform, Vector3 targetPosition)
+    IEnumerator MoveAndDestroyCube(Cube cube, Vector3 targetPosition)
     {
+        Transform cubeTransform = cube != null ? cube.transform : null;
+
         while (cubeTransform != null && Vector3.Distance(cubeTransform.localPosition, targetPosition) > 0.01f)
         {
             cubeTransform.localPosition = Vector3.MoveTowards(
@@ -200,13 +193,8 @@ public partial class GridManager
                 Obstacle obs = allObstacles[nx, ny];
                 if (obs != null && !damagedList.Contains(obs))
                 {
-                    obs.TakeDamage();
+                    DamageObstacle(obs);
                     damagedList.Add(obs);
-
-                    if (obs.health <= 0)
-                    {
-                        allObstacles[nx, ny] = null;
-                    }
                 }
             }
         }

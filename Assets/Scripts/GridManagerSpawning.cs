@@ -38,6 +38,7 @@ public partial class GridManager
         ClearChildren(obstaclesParent);
         ClearChildren(rocketHintsParent);
         ClearChildren(rocketsParent);
+        ClearChildren(effectsParent);
     }
 
     void ClearChildren(Transform parent)

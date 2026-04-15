@@ -11,6 +11,7 @@ public partial class GridManager : MonoBehaviour
     public Transform obstaclesParent;
     public Transform rocketHintsParent;
     public Transform rocketsParent;
+    public Transform effectsParent;
     public GameObject celebrationPrefab;
     public GameObject failPopup;
 
@@ -35,6 +36,20 @@ public partial class GridManager : MonoBehaviour
     public GameObject boxPrefab;
     public GameObject stonePrefab;
     public GameObject vasePrefab;
+
+    [Header("Particle Prefabs")]
+    public GameObject[] boxShardPrefabs;
+    public GameObject[] stoneShardPrefabs;
+    public GameObject[] vaseShardPrefabs;
+    public GameObject redCubeParticlePrefab;
+    public GameObject greenCubeParticlePrefab;
+    public GameObject blueCubeParticlePrefab;
+    public GameObject yellowCubeParticlePrefab;
+
+    [Header("Particle Settings")]
+    public int cubeParticleCount = 13;
+    public float cubeParticleScale = 0.22f;
+    public float particleLifetime = 0.6f;
 
     [Header("UI")]
     public TMPro.TextMeshProUGUI movesText;
@@ -81,6 +96,7 @@ public partial class GridManager : MonoBehaviour
         if (jsonFile != null)
         {
             currentLevelData = JsonUtility.FromJson<LevelData>(jsonFile.text);
+            levelCompleted = false;
             movesLeft = currentLevelData.move_count;
             InitializeGoals();
             UpdateMovesUI();

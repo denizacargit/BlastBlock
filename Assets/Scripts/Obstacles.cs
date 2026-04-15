@@ -15,18 +15,7 @@ public class Obstacle : MonoBehaviour
     public Sprite crackedVaseSprite; // Vazo (Vase) için çatlamış sprite 
 
     [Header("Shards to Spawn on Death")]
-    public List<GameObject> shardPrefabs; 
-
-    private Transform effectsParent;
-
-    void Start()
-    {
-        GameObject parentObj = GameObject.Find("Obstacles");
-        if (parentObj != null)
-        {
-            effectsParent = parentObj.transform;
-        }
-    }
+    public List<GameObject> shardPrefabs;
 
     public void TakeDamage()
     {
@@ -44,28 +33,12 @@ public class Obstacle : MonoBehaviour
 
     void Explode()
     {
-        // ÖNEMLİ: GridManager'daki referansı temizlemek için olay (event) fırlatabilir 
-        // veya GridManager'a doğrudan erişebiliriz. 
-        // En basit yol:
-        FindObjectOfType<GridManager>().ClearObstacleAt(x, y);
-
-        foreach (GameObject shardPrefab in shardPrefabs)
+        GridManager gridManager = FindObjectOfType<GridManager>();
+        if (gridManager != null)
         {
-            if (shardPrefab != null)
-            {
-                GameObject piece = Instantiate(shardPrefab, transform.position, Quaternion.identity, effectsParent);
-                
-                Rigidbody2D rb = piece.GetComponent<Rigidbody2D>();
-                if (rb != null)
-                {
-                    Vector2 force = new Vector2(Random.Range(-3f, 3f), Random.Range(3f, 6f));
-                    rb.AddForce(force, ForceMode2D.Impulse);
-                }
-
-                Destroy(piece, 1.5f);
-            }
+            gridManager.ClearObstacleAt(x, y);
         }
-        
+
         Destroy(gameObject);
     }
 }

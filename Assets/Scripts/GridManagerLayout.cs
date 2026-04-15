@@ -40,6 +40,7 @@ public partial class GridManager
         obstaclesParent = GetOrCreateGridChild("Obstacles", obstaclesParent);
         rocketHintsParent = GetOrCreateGridChild("RocketHints", rocketHintsParent);
         rocketsParent = GetOrCreateGridChild("Rockets", rocketsParent);
+        effectsParent = GetOrCreateGridChild("Effects", effectsParent);
         UpdateContentParents();
     }
 
@@ -96,6 +97,7 @@ public partial class GridManager
         ConfigureContentParent(obstaclesParent);
         ConfigureContentParent(rocketHintsParent);
         ConfigureContentParent(rocketsParent);
+        ConfigureContentParent(effectsParent);
     }
 
     void ConfigureContentParent(Transform parent)

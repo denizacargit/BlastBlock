@@ -83,17 +83,74 @@ public partial class GridManager
     {
         levelCompleted = true;
 
-        if (failPopup != null)
+        GameObject popup = GetOrCreateFailPopup();
+        if (popup == null)
         {
-            failPopup.SetActive(true);
+            return;
+        }
+
+        popup.transform.SetAsLastSibling();
+        ConfigurePopupCanvas(popup, 500);
+        popup.SetActive(true);
+
+        FailPopupController popupController = popup.GetComponent<FailPopupController>();
+        if (popupController != null)
+        {
+            popupController.Play();
         }
     }
 
     void HideFailPopup()
     {
-        if (failPopup != null)
+        if (failPopup != null && failPopup.scene.IsValid())
         {
             failPopup.SetActive(false);
+        }
+    }
+
+    GameObject GetOrCreateFailPopup()
+    {
+        if (failPopup == null)
+        {
+            return null;
+        }
+
+        if (failPopup.scene.IsValid())
+        {
+            return failPopup;
+        }
+
+        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Transform parent = canvas != null ? canvas.transform : null;
+        GameObject popup = Instantiate(failPopup, parent);
+        failPopup = popup;
+
+        RectTransform popupRect = popup.GetComponent<RectTransform>();
+        if (popupRect != null)
+        {
+            popupRect.anchorMin = new Vector2(0.5f, 0.5f);
+            popupRect.anchorMax = new Vector2(0.5f, 0.5f);
+            popupRect.pivot = new Vector2(0.5f, 0.5f);
+            popupRect.anchoredPosition = Vector2.zero;
+        }
+
+        return popup;
+    }
+
+    void ConfigurePopupCanvas(GameObject popup, int sortingOrder)
+    {
+        Canvas popupCanvas = popup.GetComponent<Canvas>();
+        if (popupCanvas == null)
+        {
+            popupCanvas = popup.AddComponent<Canvas>();
+        }
+
+        popupCanvas.overrideSorting = true;
+        popupCanvas.sortingOrder = sortingOrder;
+
+        if (popup.GetComponent<UnityEngine.UI.GraphicRaycaster>() == null)
+        {
+            popup.AddComponent<UnityEngine.UI.GraphicRaycaster>();
         }
     }
 

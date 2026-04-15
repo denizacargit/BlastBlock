@@ -149,14 +149,7 @@ public partial class GridManager
         Obstacle obstacle = allObstacles[x, y];
         if (obstacle != null)
         {
-            obstacle.TakeDamage();
-
-            if (obstacle.health <= 0)
-            {
-                CollectGoal(obstacle.obstacleType);
-                allObstacles[x, y] = null;
-            }
-
+            DamageObstacle(obstacle);
             return;
         }
 
@@ -165,6 +158,7 @@ public partial class GridManager
         {
             CollectGoal(cube.color);
             allCubes[x, y] = null;
+            SpawnCubeParticles(cube.color, GetCellLocalPosition(x, y), x, y);
             Destroy(cube.gameObject);
         }
     }
