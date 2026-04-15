@@ -10,6 +10,7 @@ public partial class GridManager
         public GoalSlotUI slot;
     }
 
+    // Builds the goal list for the loaded level.
     void InitializeGoals()
     {
         activeGoals.Clear();
@@ -37,6 +38,7 @@ public partial class GridManager
         PositionGoalSlots();
     }
 
+    // Adds goals based on obstacle counts in the grid.
     void AddObstacleGoalsFromGrid()
     {
         foreach (string goalType in obstacleGoalTypes)
@@ -50,6 +52,7 @@ public partial class GridManager
         }
     }
 
+    // Removes old goal UI slots.
     void ClearGoalSlots()
     {
         if (goalSlotsParent == null)
@@ -63,6 +66,7 @@ public partial class GridManager
         }
     }
 
+    // Registers one goal and creates its slot.
     void AddGoal(string type, int count)
     {
         if (string.IsNullOrEmpty(type))
@@ -88,6 +92,7 @@ public partial class GridManager
         activeGoals.Add(state);
     }
 
+    // Loads the icon used by a goal.
     Sprite LoadGoalIcon(string type)
     {
         Sprite icon = Resources.Load<Sprite>("Sprites/Icons/" + type + "_icon");
@@ -105,6 +110,7 @@ public partial class GridManager
         return icon;
     }
 
+    // Returns the fallback icon path for built-in goals.
     string GetDefaultGoalIconPath(string type)
     {
         switch (type)
@@ -120,6 +126,7 @@ public partial class GridManager
         }
     }
 
+    // Places goal slots inside the goal card.
     void PositionGoalSlots()
     {
         int totalCount = Mathf.Min(activeGoals.Count, 3);
@@ -147,6 +154,7 @@ public partial class GridManager
         }
     }
 
+    // Applies the layout for one, two, or three goals.
     void ApplyGoalSlotLayout(RectTransform rect, int index, int totalCount)
     {
         Vector2 slotSize;
@@ -186,6 +194,7 @@ public partial class GridManager
         }
     }
 
+    // Resizes a goal slot's inner visuals.
     void ApplyGoalSlotVisualSize(RectTransform rect, Vector2 slotSize)
     {
         GoalSlotUI slot = rect.GetComponent<GoalSlotUI>();
@@ -196,6 +205,7 @@ public partial class GridManager
         }
     }
 
+    // Counts matching cells in the level grid.
     int CountGoalsForType(string goalType)
     {
         int count = 0;
@@ -211,11 +221,13 @@ public partial class GridManager
         return count;
     }
 
+    // Checks whether a token is an obstacle.
     bool IsObstacleType(string type)
     {
         return type == "bo" || type == "s" || type == "v";
     }
 
+    // Compares a grid token with a goal token.
     bool DoesTypeMatchGoal(string itemType, string goalType)
     {
         if (string.IsNullOrEmpty(itemType) || string.IsNullOrEmpty(goalType))
@@ -231,6 +243,7 @@ public partial class GridManager
         return itemType == goalType;
     }
 
+    // Reduces progress for a collected item.
     void CollectGoal(string type)
     {
         if (levelCompleted)
@@ -269,6 +282,7 @@ public partial class GridManager
         }
     }
 
+    // Checks whether every goal is complete.
     bool AreAllGoalsComplete()
     {
         if (activeGoals.Count == 0)
@@ -287,6 +301,7 @@ public partial class GridManager
         return true;
     }
 
+    // Updates the older single-goal UI fields.
     void UpdateLegacyGoalUI()
     {
         int totalRemaining = 0;

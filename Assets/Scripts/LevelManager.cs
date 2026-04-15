@@ -1,6 +1,6 @@
 using UnityEngine;
-using TMPro; // Required for the TextMeshPro variable
-using UnityEngine.SceneManagement; // Required to switch scenes
+using TMPro;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class LevelManager : MonoBehaviour
@@ -8,21 +8,19 @@ public class LevelManager : MonoBehaviour
     private const int MinLevel = 1;
     private const int MaxLevel = 10;
 
-    // This is the variable we will drag our text object into
     public TextMeshProUGUI levelButtonText; 
     
     private int currentLevel;
 
+    // Loads the saved level and wires the menu button.
     void Start()
     {
-        // 1. Load the saved level from memory (Default to 1 if first time playing)
         currentLevel = PlayerPrefs.GetInt("CurrentLevel", MinLevel);
-        
-        // 2. Update the button text based on the level
         UpdateUI();
         BindLevelButtons();
     }
 
+    // Connects every level button visual to the same action.
     void BindLevelButtons()
     {
         GameObject levelButtonObject = GameObject.Find("LevelButton");
@@ -59,11 +57,13 @@ public class LevelManager : MonoBehaviour
         }
     }
 
+    // Keeps utility buttons out of the level launch flow.
     bool IsResetButton(string buttonName)
     {
         return buttonName.ToLowerInvariant().Contains("reset");
     }
 
+    // Displays the current progress on the main button.
     void UpdateUI()
     {
         if (levelButtonText == null) return;
@@ -78,6 +78,7 @@ public class LevelManager : MonoBehaviour
         }
     }
 
+    // Resets local progress for testing.
     public void ResetToLevelOne()
     {
         currentLevel = MinLevel;
@@ -86,13 +87,14 @@ public class LevelManager : MonoBehaviour
         UpdateUI();
     }
 
+    // Reloads the saved level number into the UI.
     public void RefreshFromSavedLevel()
     {
         currentLevel = PlayerPrefs.GetInt("CurrentLevel", MinLevel);
         UpdateUI();
     }
 
-    // This is the function the button will trigger
+    // Opens the saved level.
     public void LoadCurrentLevel()
     {
         currentLevel = PlayerPrefs.GetInt("CurrentLevel", currentLevel);

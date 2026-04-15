@@ -21,6 +21,7 @@ public class FailPopupController : MonoBehaviour
 
     private Vector2 popupBaseStartSize;
 
+    // Prepares popup references and buttons.
     void Awake()
     {
         EnsureRuntimeHierarchy();
@@ -43,6 +44,7 @@ public class FailPopupController : MonoBehaviour
         }
     }
 
+    // Instantiates assigned prefab references if needed.
     void EnsureRuntimeHierarchy()
     {
         popupBase = EnsureChildInstance(popupBase, transform, "PopupBase");
@@ -55,6 +57,7 @@ public class FailPopupController : MonoBehaviour
         ApplyDefaultLayout();
     }
 
+    // Returns a child instance for a prefab reference.
     T EnsureChildInstance<T>(T reference, Transform parent, string instanceName) where T : Component
     {
         if (reference == null || parent == null)
@@ -73,6 +76,7 @@ public class FailPopupController : MonoBehaviour
         return instance;
     }
 
+    // Applies the popup layout.
     void ApplyDefaultLayout()
     {
         if (popupBase != null)
@@ -113,6 +117,7 @@ public class FailPopupController : MonoBehaviour
         }
     }
 
+    // Returns the try again button position.
     Vector2 GetTryAgainButtonPosition()
     {
         if (popupBase == null)
@@ -123,6 +128,7 @@ public class FailPopupController : MonoBehaviour
         return new Vector2(0f, 40f);
     }
 
+    // Starts the fail popup animation.
     public void Play()
     {
         StopAllCoroutines();
@@ -130,6 +136,7 @@ public class FailPopupController : MonoBehaviour
         StartCoroutine(PlaySequence());
     }
 
+    // Runs the fail popup sequence.
     IEnumerator PlaySequence()
     {
         if (closeButton != null)
@@ -165,6 +172,7 @@ public class FailPopupController : MonoBehaviour
         }
     }
 
+    // Moves the popup into view.
     IEnumerator AnimatePopupRise()
     {
         if (popupBase == null)
@@ -187,6 +195,7 @@ public class FailPopupController : MonoBehaviour
         popupBase.anchoredPosition = end;
     }
 
+    // Eases the popup motion.
     float EaseOutBack(float t)
     {
         const float c1 = 1.70158f;
@@ -194,11 +203,13 @@ public class FailPopupController : MonoBehaviour
         return 1f + c3 * Mathf.Pow(t - 1f, 3f) + c1 * Mathf.Pow(t - 1f, 2f);
     }
 
+    // Closes the level scene.
     public void ReturnToMainScene()
     {
         SceneManager.LoadScene("MainScene");
     }
 
+    // Reloads the current level.
     public void TryAgain()
     {
         SceneManager.LoadScene("LevelScene");

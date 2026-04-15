@@ -3,6 +3,7 @@ using System.Collections;
 
 public partial class GridManager
 {
+    // Builds the initial board from level data.
     void GenerateGrid()
     {
         for (int y = 0; y < currentLevelData.grid_height; y++)
@@ -22,16 +23,19 @@ public partial class GridManager
         }
     }
 
+    // Picks one of the playable cube colors.
     string GetRandomCubeType()
     {
         return cubeTypes[Random.Range(0, cubeTypes.Length)];
     }
 
+    // Checks whether a token is a cube.
     bool IsCubeType(string type)
     {
         return type == "r" || type == "g" || type == "b" || type == "y";
     }
 
+    // Removes all board visuals.
     void ClearGrid()
     {
         ClearChildren(cubesParent);
@@ -41,6 +45,7 @@ public partial class GridManager
         ClearChildren(effectsParent);
     }
 
+    // Removes every child under a parent.
     void ClearChildren(Transform parent)
     {
         if (parent == null)
@@ -54,6 +59,7 @@ public partial class GridManager
         }
     }
 
+    // Creates the correct item for one grid cell.
     void SpawnItem(string type, int x, int y)
     {
         if (type == "hro")
@@ -91,24 +97,21 @@ public partial class GridManager
             item.transform.localRotation = Quaternion.identity;
             item.name = $"{type}_{x}_{y}";
 
-            // 4. Sorting Order Ayarı (Görsel üst üste binmeleri engeller)
             SpriteRenderer sr = item.GetComponent<SpriteRenderer>();
             if (sr != null)
             {
                 sr.sortingOrder = GetBoardSortingOrder(x, y, isObstacle ? 1 : 0);
             }
 
-            // 5. Veri Yapılarını Güncelleme (En Kritik Kısım)
             if (isObstacle)
             {
                 Obstacle obstacleScript = item.GetComponent<Obstacle>();
                 if (obstacleScript != null)
                 {
-                    obstacleScript.x = x; // Koordinatları scriptin içine de yazıyoruz
+                    obstacleScript.x = x;
                     obstacleScript.y = y;
                     allObstacles[x, y] = obstacleScript;
                 }
-                // Engel olan yerde küp olamaz, bu hücreyi küp dizisinde temizle
                 allCubes[x, y] = null;
                 allRockets[x, y] = null;
             }
@@ -122,13 +125,13 @@ public partial class GridManager
                     cubeScript.color = type;
                     allCubes[x, y] = cubeScript;
                 }
-                // Küp olan yerde engel olamaz (başlangıç için)
                 allObstacles[x, y] = null;
                 allRockets[x, y] = null;
             }
         }
     }
 
+    // Spawns a new cube above the board when needed.
     Cube SpawnCubeAt(string type, int x, int y, int spawnRowOffset = 0)
     {
         GameObject prefab = GetCubePrefab(type);
@@ -155,6 +158,7 @@ public partial class GridManager
         return cubeScript;
     }
 
+    // Creates a rocket at a grid cell.
     Rocket SpawnRocketAt(int x, int y, RocketDirection direction)
     {
         GameObject prefab = direction == RocketDirection.Horizontal ? horizontalRocketPrefab : verticalRocketPrefab;
@@ -183,11 +187,13 @@ public partial class GridManager
         return rocket;
     }
 
+    // Chooses a rocket direction.
     RocketDirection GetRandomRocketDirection()
     {
         return Random.value < 0.5f ? RocketDirection.Horizontal : RocketDirection.Vertical;
     }
 
+    // Updates a rocket's grid and visual position.
     void UpdateRocketVisual(Rocket rocket, int x, int y, bool animate = false)
     {
         if (rocket == null)
@@ -215,6 +221,35 @@ public partial class GridManager
         }
     }
 
+    // Updates a movable obstacle's grid and visual position.
+    void UpdateObstacleVisual(Obstacle obstacle, int x, int y, bool animate = false)
+    {
+        if (obstacle == null)
+        {
+            return;
+        }
+
+        obstacle.x = x;
+        obstacle.y = y;
+        Vector3 targetPosition = GetCellLocalPosition(x, y);
+
+        if (animate)
+        {
+            StartCoroutine(MoveCubeTo(obstacle.transform, targetPosition));
+        }
+        else
+        {
+            obstacle.transform.localPosition = targetPosition;
+        }
+
+        SpriteRenderer sr = obstacle.GetComponent<SpriteRenderer>();
+        if (sr != null)
+        {
+            sr.sortingOrder = GetBoardSortingOrder(x, y, 1);
+        }
+    }
+
+    // Returns the prefab for a cube token.
     GameObject GetCubePrefab(string type)
     {
         switch (type)
@@ -227,6 +262,7 @@ public partial class GridManager
         }
     }
 
+    // Returns the hint prefab for a cube color.
     GameObject GetRocketHintPrefab(string type)
     {
         switch (type)
@@ -239,6 +275,7 @@ public partial class GridManager
         }
     }
 
+    // Updates a cube's grid and visual position.
     void UpdateCubeVisual(Cube cube, int x, int y, bool animate = false)
     {
         if (cube == null)
@@ -266,6 +303,7 @@ public partial class GridManager
         }
     }
 
+    // Slides a board item into place.
     IEnumerator MoveCubeTo(Transform cubeTransform, Vector3 targetPosition)
     {
         while (cubeTransform != null && Vector3.Distance(cubeTransform.localPosition, targetPosition) > 0.01f)

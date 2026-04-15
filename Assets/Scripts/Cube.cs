@@ -2,18 +2,19 @@ using UnityEngine;
 
 public class Cube : MonoBehaviour
 {
-    public string color; // Set this to "r", "g", "b", or "y" in the Inspector for each prefab
+    public string color;
     public int x;
     public int y;
 
     private GridManager gridManager;
 
+    // Caches the board controller.
     void Start()
     {
         gridManager = Object.FindFirstObjectByType<GridManager>();
     }
 
-    // This detects the click
+    // Sends cube taps to the board.
     void OnMouseDown()
     {
         if (gridManager != null)

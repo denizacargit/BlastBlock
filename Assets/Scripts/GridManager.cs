@@ -33,6 +33,8 @@ public partial class GridManager : MonoBehaviour
     public GameObject horizontalRocketRightPartPrefab;
     public GameObject verticalRocketUpPartPrefab;
     public GameObject verticalRocketDownPartPrefab;
+    public GameObject smallStarRocketTrailPrefab;
+    public GameObject bigStarRocketTrailPrefab;
     public GameObject boxPrefab;
     public GameObject stonePrefab;
     public GameObject vasePrefab;
@@ -50,6 +52,12 @@ public partial class GridManager : MonoBehaviour
     public int cubeParticleCount = 13;
     public float cubeParticleScale = 0.22f;
     public float particleLifetime = 0.6f;
+    public int rocketTrailStarsPerCell = 25;
+    public float smallRocketTrailStarScale = 0.08f;
+    public float bigRocketTrailStarScale = 0.095f;
+    public float rocketTrailJitter = 0.045f;
+    public float rocketTrailDestroyInterval = 0.00025f;
+    public int rocketTrailDestroyBatchSize = 15;
 
     [Header("UI")]
     public TMPro.TextMeshProUGUI movesText;
@@ -75,19 +83,21 @@ public partial class GridManager : MonoBehaviour
 
     private const float GridPadding = 0.33f;
     private const float FallSpeed = 8f;
-    private const float RocketPartSpeed = 3f;
+    private const float RocketPartSpeed = 9f;
     private const float RocketPartLifetime = 0.8f;
     private const float WinReturnDelay = 1.5f;
     private const int BoardSortingBase = 100;
     private readonly string[] cubeTypes = { "r", "g", "b", "y" };
     private readonly string[] obstacleGoalTypes = { "s", "bo", "v" };
 
+    // Loads the selected level on scene start.
     void Start()
     {
         int selectedLevel = PlayerPrefs.GetInt("CurrentLevel", 1);
         LoadLevel(Mathf.Clamp(selectedLevel, 1, 10));
     }
 
+    // Loads one level and rebuilds the board.
     public void LoadLevel(int levelNumber)
     {
         string filePath = "Levels/level_" + levelNumber.ToString("D2");

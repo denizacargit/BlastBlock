@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 
 public partial class GridManager
 {
+    // Finishes the current level and shows the win popup.
     void CompleteLevel()
     {
         if (levelCompleted)
@@ -60,12 +61,14 @@ public partial class GridManager
         StartCoroutine(ReturnToMainSceneAfterDelay());
     }
 
+    // Returns to the main scene after a short pause.
     IEnumerator ReturnToMainSceneAfterDelay()
     {
         yield return new WaitForSeconds(WinReturnDelay);
         SceneManager.LoadScene("MainScene");
     }
 
+    // Spends one move and checks for failure.
     void DecrementMoves()
     {
         movesLeft--;
@@ -79,6 +82,7 @@ public partial class GridManager
         }
     }
 
+    // Opens the fail popup above the board.
     void ShowFailPopup()
     {
         levelCompleted = true;
@@ -100,6 +104,7 @@ public partial class GridManager
         }
     }
 
+    // Hides any active fail popup.
     void HideFailPopup()
     {
         if (failPopup != null && failPopup.scene.IsValid())
@@ -108,6 +113,7 @@ public partial class GridManager
         }
     }
 
+    // Finds or creates the fail popup instance.
     GameObject GetOrCreateFailPopup()
     {
         if (failPopup == null)
@@ -137,6 +143,7 @@ public partial class GridManager
         return popup;
     }
 
+    // Keeps popup UI above gameplay.
     void ConfigurePopupCanvas(GameObject popup, int sortingOrder)
     {
         Canvas popupCanvas = popup.GetComponent<Canvas>();
@@ -154,16 +161,19 @@ public partial class GridManager
         }
     }
 
+    // Restarts the current level.
     public void RetryLevel()
     {
         SceneManager.LoadScene("LevelScene");
     }
 
+    // Opens the main menu scene.
     public void ReturnToMainScene()
     {
         SceneManager.LoadScene("MainScene");
     }
 
+    // Refreshes the moves counter text.
     void UpdateMovesUI()
     {
         if (moveCounterText != null)
@@ -172,6 +182,7 @@ public partial class GridManager
         }
     }
 
+    // Clears an obstacle slot in the grid.
     public void ClearObstacleAt(int x, int y)
     {
         if (x >= 0 && x < currentLevelData.grid_width && y >= 0 && y < currentLevelData.grid_height)

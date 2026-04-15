@@ -13,6 +13,7 @@ public class GoalSlotUI : MonoBehaviour
     private const float CountHeightRatio = 0.42f;
     private const float CheckSizeRatio = 0.42f;
 
+    // Initializes the icon and counter.
     public void Setup(Sprite icon, int count)
     {
         EnsureCheckImageInstance();
@@ -33,6 +34,7 @@ public class GoalSlotUI : MonoBehaviour
         SetCount(count);
     }
 
+    // Resizes icon, count, and check visuals.
     public void ApplyVisualSize(Vector2 slotSize)
     {
         EnsureCheckImageInstance();
@@ -70,6 +72,7 @@ public class GoalSlotUI : MonoBehaviour
         }
     }
 
+    // Instantiates a check image from a prefab reference.
     void EnsureCheckImageInstance()
     {
         if (checkImage == null || checkImage.transform.IsChildOf(transform))
@@ -82,6 +85,7 @@ public class GoalSlotUI : MonoBehaviour
         checkImage.name = "CheckImage";
     }
 
+    // Updates the visible remaining count.
     public void SetCount(int count)
     {
         if (countText != null)

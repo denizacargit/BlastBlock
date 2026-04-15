@@ -2,6 +2,7 @@
 
 public partial class GridManager
 {
+    // Finds and prepares the grid hierarchy.
     void PrepareGridHierarchy()
     {
         if (gridParent != null && gridParent.name == "GridParent" && gridParent.parent != null && gridParent.parent.parent != null)
@@ -44,6 +45,7 @@ public partial class GridManager
         UpdateContentParents();
     }
 
+    // Moves the background to match the content anchor.
     void AlignBackgroundToContentAnchor()
     {
         if (gridBackgroundRect == null || gridContentAnchor == null || gridContentAnchor.parent != gridBackgroundRect)
@@ -61,6 +63,7 @@ public partial class GridManager
         gridContentAnchor.anchoredPosition = Vector2.zero;
     }
 
+    // Finds or creates a named child under the grid.
     Transform GetOrCreateGridChild(string childName, Transform current)
     {
         if (gridParent == null)
@@ -85,6 +88,7 @@ public partial class GridManager
         return child;
     }
 
+    // Applies scale and position to board parents.
     void UpdateContentParents()
     {
         if (currentLevelData == null)
@@ -100,6 +104,7 @@ public partial class GridManager
         ConfigureContentParent(effectsParent);
     }
 
+    // Places a board content parent on the anchor.
     void ConfigureContentParent(Transform parent)
     {
         if (parent == null)
@@ -120,11 +125,13 @@ public partial class GridManager
         }
     }
 
+    // Returns the current board visual scale.
     float CalculateContentScale()
     {
         return gridVisualScale;
     }
 
+    // Reads cell size from the box prefab.
     void CalculateCellSizeFromBoxPrefab()
     {
         Vector2 boxSize = GetPrefabRendererSize(boxPrefab);
@@ -132,6 +139,7 @@ public partial class GridManager
         cellHeight = Mathf.Max(0.1f, boxSize.y);
     }
 
+    // Measures the sprite size of a prefab.
     Vector2 GetPrefabRendererSize(GameObject prefab)
     {
         if (prefab == null)
@@ -150,16 +158,19 @@ public partial class GridManager
         return new Vector2(spriteSize.x * scale.x, spriteSize.y * scale.y);
     }
 
+    // Returns the board width in local units.
     float GetGridContentWidth()
     {
         return currentLevelData.grid_width * cellWidth;
     }
 
+    // Returns the board height in local units.
     float GetGridContentHeight()
     {
         return currentLevelData.grid_height * cellHeight;
     }
 
+    // Converts grid coordinates to local position.
     Vector3 GetCellLocalPosition(int x, int y)
     {
         float halfWidth = (currentLevelData.grid_width - 1) * cellWidth / 2f;
@@ -170,6 +181,7 @@ public partial class GridManager
         return new Vector3(posX, posY, 0f);
     }
 
+    // Fits the background around the board.
     void ResizeBackground()
     {
         if (gridBackgroundRect == null || currentLevelData == null) return;
@@ -181,6 +193,7 @@ public partial class GridManager
         gridBackgroundRect.sizeDelta = new Vector2(totalWidth + padding, totalHeight + padding);
     }
 
+    // Calculates draw order for board items.
     int GetBoardSortingOrder(int x, int y, int layerOffset = 0)
     {
         return BoardSortingBase + (y * 10) + x + layerOffset;

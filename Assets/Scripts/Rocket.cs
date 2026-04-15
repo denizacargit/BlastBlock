@@ -14,11 +14,13 @@ public class Rocket : MonoBehaviour
 
     private GridManager gridManager;
 
+    // Caches the board controller.
     void Start()
     {
         gridManager = Object.FindFirstObjectByType<GridManager>();
     }
 
+    // Sends rocket taps to the board.
     void OnMouseDown()
     {
         if (gridManager != null)

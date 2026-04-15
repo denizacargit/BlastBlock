@@ -36,6 +36,7 @@ public class WinPopupController : MonoBehaviour
 
     private Vector2 popupBaseStartSize;
 
+    // Prepares popup references and buttons.
     void Awake()
     {
         EnsureRuntimeHierarchy();
@@ -58,6 +59,7 @@ public class WinPopupController : MonoBehaviour
         }
     }
 
+    // Instantiates assigned prefab references if needed.
     void EnsureRuntimeHierarchy()
     {
         popupBase = EnsureChildInstance(popupBase, transform, "PopupBase");
@@ -75,6 +77,7 @@ public class WinPopupController : MonoBehaviour
         ApplyDefaultLayout();
     }
 
+    // Returns a child instance for a prefab reference.
     T EnsureChildInstance<T>(T reference, Transform parent, string instanceName) where T : Component
     {
         if (reference == null || parent == null)
@@ -93,6 +96,7 @@ public class WinPopupController : MonoBehaviour
         return instance;
     }
 
+    // Applies the win popup layout.
     void ApplyDefaultLayout()
     {
         if (popupBase != null)
@@ -173,6 +177,7 @@ public class WinPopupController : MonoBehaviour
         }
     }
 
+    // Returns the final text position.
     Vector2 GetCongratulationsTextPosition()
     {
         if (popupBase == null)
@@ -183,12 +188,14 @@ public class WinPopupController : MonoBehaviour
         return new Vector2(0f, -popupBase.sizeDelta.y * 0.34f + 20f);
     }
 
+    // Starts the win popup animation.
     public void Play()
     {
         StopAllCoroutines();
         StartCoroutine(PlaySequence());
     }
 
+    // Runs the win popup sequence.
     IEnumerator PlaySequence()
     {
         if (closeButton != null)
@@ -227,6 +234,7 @@ public class WinPopupController : MonoBehaviour
         }
     }
 
+    // Moves the popup into view.
     IEnumerator AnimatePopupRise()
     {
         if (popupBase == null)
@@ -249,6 +257,7 @@ public class WinPopupController : MonoBehaviour
         popupBase.anchoredPosition = end;
     }
 
+    // Scales the main star into view.
     IEnumerator AnimateBigStar()
     {
         if (bigStar == null)
@@ -270,6 +279,7 @@ public class WinPopupController : MonoBehaviour
         bigStar.localScale = Vector3.one;
     }
 
+    // Moves the message into view.
     IEnumerator AnimateCongratulationsText()
     {
         if (congratulationsText == null)
@@ -292,6 +302,7 @@ public class WinPopupController : MonoBehaviour
         congratulationsText.anchoredPosition = end;
     }
 
+    // Spawns falling side stars.
     IEnumerator SpawnSmallStars()
     {
         if (smallStarPrefab == null)
@@ -309,6 +320,7 @@ public class WinPopupController : MonoBehaviour
         }
     }
 
+    // Creates one side star.
     void SpawnSmallStar(RectTransform origin, int horizontalDirection, int index)
     {
         if (origin == null || starTarget == null || smallStarPrefab == null)
@@ -328,6 +340,7 @@ public class WinPopupController : MonoBehaviour
         StartCoroutine(AnimateSmallStar(star, origin.anchoredPosition, endPosition, horizontalDirection, index));
     }
 
+    // Moves a side star along an arc.
     IEnumerator AnimateSmallStar(RectTransform star, Vector2 start, Vector2 end, int horizontalDirection, int index)
     {
         Vector2 control = start + new Vector2(horizontalDirection * (sideArcSpread + index * 8f), arcHeight);
@@ -349,6 +362,7 @@ public class WinPopupController : MonoBehaviour
         Destroy(star.gameObject);
     }
 
+    // Eases popup and star motion.
     float EaseOutBack(float t)
     {
         const float c1 = 1.70158f;
@@ -356,6 +370,7 @@ public class WinPopupController : MonoBehaviour
         return 1f + c3 * Mathf.Pow(t - 1f, 3f) + c1 * Mathf.Pow(t - 1f, 2f);
     }
 
+    // Closes the level scene.
     public void ReturnToMainScene()
     {
         SceneManager.LoadScene("MainScene");

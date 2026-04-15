@@ -6,6 +6,7 @@ public class RocketPart : MonoBehaviour
     private float speed;
     private float lifetime;
 
+    // Sets movement for legacy rocket parts.
     public void Initialize(Vector3 moveDirection, float moveSpeed, float duration)
     {
         direction = moveDirection.normalized;
@@ -13,6 +14,7 @@ public class RocketPart : MonoBehaviour
         lifetime = duration;
     }
 
+    // Moves the part while it is active.
     void Update()
     {
         transform.localPosition += direction * speed * Time.deltaTime;

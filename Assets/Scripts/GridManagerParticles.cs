@@ -3,6 +3,7 @@ using UnityEngine;
 
 public partial class GridManager
 {
+    // Applies damage and handles obstacle cleanup.
     void DamageObstacle(Obstacle obstacle)
     {
         if (obstacle == null)
@@ -32,6 +33,7 @@ public partial class GridManager
         SpawnObstacleParticles(obstacleType, particlePosition, x, y);
     }
 
+    // Spawns small pieces for a destroyed obstacle.
     void SpawnObstacleParticles(string obstacleType, Vector3 localPosition, int x, int y)
     {
         if (effectsParent == null)
@@ -69,6 +71,7 @@ public partial class GridManager
         }
     }
 
+    // Spawns spark pieces for a destroyed cube.
     void SpawnCubeParticles(string cubeColor, Vector3 localPosition, int x, int y)
     {
         int count = Mathf.Max(0, cubeParticleCount);
@@ -104,6 +107,7 @@ public partial class GridManager
         }
     }
 
+    // Creates a particle object from a prefab or sprite.
     GameObject CreateParticleInstance(GameObject prefab, Sprite fallbackSprite)
     {
         if (effectsParent == null)
@@ -123,6 +127,7 @@ public partial class GridManager
         return particle;
     }
 
+    // Moves and fades a particle.
     IEnumerator AnimateParticle(Transform particle, Vector3 direction, float lifetime, float travelMultiplier)
     {
         if (particle == null)
@@ -170,6 +175,7 @@ public partial class GridManager
         }
     }
 
+    // Returns particle prefabs for an obstacle type.
     GameObject[] GetObstacleParticlePrefabs(string obstacleType)
     {
         switch (obstacleType)
@@ -185,6 +191,7 @@ public partial class GridManager
         }
     }
 
+    // Checks whether a prefab array has usable entries.
     bool HasAnyPrefab(GameObject[] prefabs)
     {
         if (prefabs == null)
@@ -203,6 +210,7 @@ public partial class GridManager
         return false;
     }
 
+    // Returns a cube particle prefab for a color.
     GameObject GetCubeParticlePrefab(string cubeColor)
     {
         switch (cubeColor)
@@ -215,6 +223,7 @@ public partial class GridManager
         }
     }
 
+    // Loads a fallback cube particle sprite.
     Sprite GetCubeParticleSprite(string cubeColor)
     {
         switch (cubeColor)
@@ -227,6 +236,7 @@ public partial class GridManager
         }
     }
 
+    // Places particles above board pieces.
     void SetParticleSortingOrder(GameObject particle, int x, int y, int layerOffset)
     {
         SpriteRenderer[] renderers = particle.GetComponentsInChildren<SpriteRenderer>();

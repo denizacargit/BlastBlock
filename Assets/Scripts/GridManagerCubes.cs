@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 public partial class GridManager
 {
+    // Rebuilds rocket hints for eligible groups.
     void RefreshRocketHints()
     {
         ClearChildren(rocketHintsParent);
@@ -41,6 +42,7 @@ public partial class GridManager
         }
     }
 
+    // Collects neighboring cubes with the same color.
     void FindConnectedCubes(int x, int y, string color, List<Cube> connected)
     {
         if (x < 0 || x >= currentLevelData.grid_width || y < 0 || y >= currentLevelData.grid_height)
@@ -62,6 +64,7 @@ public partial class GridManager
         FindConnectedCubes(x, y - 1, color, connected);
     }
 
+    // Places rocket markers over a cube group.
     void SpawnRocketHintsForGroup(List<Cube> group)
     {
         foreach (Cube cube in group)
@@ -85,6 +88,7 @@ public partial class GridManager
         }
     }
 
+    // Handles a cube group tap.
     public void OnCubeClicked(Cube clickedCube)
     {
         if (levelCompleted)
@@ -101,20 +105,17 @@ public partial class GridManager
             DecrementMoves();
             bool shouldCreateRocket = matches.Count >= 4;
             
-            // Bu sette hasar alanları tutarak aynı hamlede bir objeye birden fazla hasar gitmesini engelliyoruz
             HashSet<Obstacle> obstaclesToDamage = new HashSet<Obstacle>();
             Vector3 rocketCreatePosition = GetCellLocalPosition(clickedCube.x, clickedCube.y);
 
             foreach (Cube c in matches)
             {
-                // Küpün 4 yanındaki komşuları tara
                 Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
                 foreach (Vector2Int dir in directions)
                 {
                     int nx = c.x + dir.x;
                     int ny = c.y + dir.y;
 
-                    // Sınır kontrolü
                     if (nx >= 0 && nx < currentLevelData.grid_width && ny >= 0 && ny < currentLevelData.grid_height)
                     {
                         Obstacle obs = allObstacles[nx, ny];
@@ -125,7 +126,6 @@ public partial class GridManager
                     }
                 }
 
-                // Küpü diziden ve sahneden kaldır
                 CollectGoal(c.color);
                 allCubes[c.x, c.y] = null;
                 SpawnCubeParticles(c.color, GetCellLocalPosition(c.x, c.y), c.x, c.y);
@@ -140,7 +140,6 @@ public partial class GridManager
                 }
             }
 
-            // Belirlenen obstacle'lara hasar ver
             foreach (Obstacle obs in obstaclesToDamage)
             {
                 DamageObstacle(obs);
@@ -159,6 +158,7 @@ public partial class GridManager
         }
     }
 
+    // Moves cubes into a rocket merge point.
     IEnumerator MoveAndDestroyCube(Cube cube, Vector3 targetPosition)
     {
         Transform cubeTransform = cube != null ? cube.transform : null;
@@ -179,6 +179,7 @@ public partial class GridManager
         }
     }
 
+    // Damages obstacles around a cell once.
     void CheckForObstacleNeighbors(int x, int y, HashSet<Obstacle> damagedList)
     {
         Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
@@ -200,6 +201,7 @@ public partial class GridManager
         }
     }
 
+    // Finds the full tapped color group.
     void FindMatches(int x, int y, string color, List<Cube> matches)
     {
         if (x < 0 || x >= currentLevelData.grid_width || y < 0 || y >= currentLevelData.grid_height) return;
@@ -215,6 +217,7 @@ public partial class GridManager
         FindMatches(x, y - 1, color, matches);
     }
 
+    // Drops movable pieces and fills empty cells.
     public void ApplyGravity()
     {
         for (int x = 0; x < currentLevelData.grid_width; x++)
@@ -223,9 +226,23 @@ public partial class GridManager
 
             for (int y = 0; y < currentLevelData.grid_height; y++)
             {
-                if (allObstacles[x, y] != null)
+                Obstacle obstacle = allObstacles[x, y];
+                if (obstacle != null && obstacle.obstacleType != "v")
                 {
                     targetY = y + 1;
+                    continue;
+                }
+
+                if (obstacle != null)
+                {
+                    if (y != targetY)
+                    {
+                        allObstacles[x, targetY] = obstacle;
+                        allObstacles[x, y] = null;
+                    }
+
+                    UpdateObstacleVisual(obstacle, x, targetY, true);
+                    targetY++;
                     continue;
                 }
 

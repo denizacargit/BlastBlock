@@ -4,19 +4,20 @@ using System.Collections.Generic;
 public class Obstacle : MonoBehaviour
 {
     [Header("Grid Info")]
-    public int x; // GridManager tarafından atanacak 
-    public int y; // GridManager tarafından atanacak 
+    public int x;
+    public int y;
 
     [Header("Settings")]
-    public string obstacleType; // "bo" (Box), "s" (Stone), "v" (Vase) 
-    public int health = 1;      // Vazo için 2, Kutu/Taş için 1 
+    public string obstacleType;
+    public int health = 1;
 
     [Header("Visual States")]
-    public Sprite crackedVaseSprite; // Vazo (Vase) için çatlamış sprite 
+    public Sprite crackedVaseSprite;
 
     [Header("Shards to Spawn on Death")]
     public List<GameObject> shardPrefabs;
 
+    // Applies one hit to the obstacle.
     public void TakeDamage()
     {
         health--;
@@ -31,6 +32,7 @@ public class Obstacle : MonoBehaviour
         }
     }
 
+    // Removes the obstacle from the board.
     void Explode()
     {
         GridManager gridManager = FindObjectOfType<GridManager>();
