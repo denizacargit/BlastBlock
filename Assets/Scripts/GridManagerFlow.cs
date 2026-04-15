@@ -19,7 +19,42 @@ public partial class GridManager
 
         if (celebrationPrefab != null)
         {
-            Instantiate(celebrationPrefab, transform.position, Quaternion.identity);
+            Canvas canvas = FindFirstObjectByType<Canvas>();
+            Transform parent = canvas != null ? canvas.transform : null;
+            GameObject celebration = Instantiate(celebrationPrefab, parent);
+            celebration.transform.SetAsLastSibling();
+
+            Canvas celebrationCanvas = celebration.GetComponent<Canvas>();
+            if (celebrationCanvas == null)
+            {
+                celebrationCanvas = celebration.AddComponent<Canvas>();
+            }
+
+            celebrationCanvas.overrideSorting = true;
+            celebrationCanvas.sortingOrder = 500;
+
+            if (celebration.GetComponent<UnityEngine.UI.GraphicRaycaster>() == null)
+            {
+                celebration.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+            }
+
+            RectTransform celebrationRect = celebration.GetComponent<RectTransform>();
+            if (celebrationRect != null)
+            {
+                celebrationRect.anchorMin = new Vector2(0.5f, 0.5f);
+                celebrationRect.anchorMax = new Vector2(0.5f, 0.5f);
+                celebrationRect.pivot = new Vector2(0.5f, 0.5f);
+                celebrationRect.anchoredPosition = Vector2.zero;
+            }
+
+            WinPopupController popupController = celebration.GetComponent<WinPopupController>();
+            if (popupController != null)
+            {
+                popupController.Play();
+                return;
+            }
+
+            Debug.LogWarning("Celebration prefab is assigned, but it has no WinPopupController. Falling back to delayed MainScene load.");
         }
 
         StartCoroutine(ReturnToMainSceneAfterDelay());

@@ -49,9 +49,19 @@ public class LevelManager : MonoBehaviour
         Button[] levelButtons = levelButtonObject.GetComponentsInChildren<Button>(true);
         foreach (Button button in levelButtons)
         {
+            if (IsResetButton(button.gameObject.name))
+            {
+                continue;
+            }
+
             button.onClick.RemoveListener(LoadCurrentLevel);
             button.onClick.AddListener(LoadCurrentLevel);
         }
+    }
+
+    bool IsResetButton(string buttonName)
+    {
+        return buttonName.ToLowerInvariant().Contains("reset");
     }
 
     void UpdateUI()
@@ -66,6 +76,20 @@ public class LevelManager : MonoBehaviour
         {
             levelButtonText.text = "Level " + Mathf.Clamp(currentLevel, MinLevel, MaxLevel);
         }
+    }
+
+    public void ResetToLevelOne()
+    {
+        currentLevel = MinLevel;
+        PlayerPrefs.SetInt("CurrentLevel", currentLevel);
+        PlayerPrefs.Save();
+        UpdateUI();
+    }
+
+    public void RefreshFromSavedLevel()
+    {
+        currentLevel = PlayerPrefs.GetInt("CurrentLevel", MinLevel);
+        UpdateUI();
     }
 
     // This is the function the button will trigger

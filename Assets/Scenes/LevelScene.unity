@@ -293,8 +293,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 192584324}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1189,7 +1189,7 @@ MonoBehaviour:
   obstaclesParent: {fileID: 1497126139}
   rocketHintsParent: {fileID: 0}
   rocketsParent: {fileID: 0}
-  celebrationPrefab: {fileID: 0}
+  celebrationPrefab: {fileID: 7301868563775579186, guid: 8879542d7cfc0ee44a98a98ff312ef72, type: 3}
   failPopup: {fileID: 0}
   gridVisualScale: 100
   redCubePrefab: {fileID: 6931834663621290641, guid: 595f5b93a30fc5d498c586244a541673, type: 3}

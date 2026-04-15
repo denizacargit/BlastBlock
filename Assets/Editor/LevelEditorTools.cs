@@ -85,6 +85,12 @@ public class LevelEditorTools : EditorWindow
             {
                 gridManager.LoadLevel(clampedLevel);
             }
+
+            LevelManager levelManager = Object.FindFirstObjectByType<LevelManager>();
+            if (levelManager != null)
+            {
+                levelManager.RefreshFromSavedLevel();
+            }
         }
 
         Debug.Log($"Selected level set to {clampedLevel}.");
