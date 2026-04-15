@@ -119,7 +119,7 @@ public partial class GridManager
                     if (nx >= 0 && nx < currentLevelData.grid_width && ny >= 0 && ny < currentLevelData.grid_height)
                     {
                         Obstacle obs = allObstacles[nx, ny];
-                        if (obs != null)
+                        if (CanCubeBlastDamageObstacle(obs))
                         {
                             obstaclesToDamage.Add(obs);
                         }
@@ -192,13 +192,19 @@ public partial class GridManager
             if (nx >= 0 && nx < currentLevelData.grid_width && ny >= 0 && ny < currentLevelData.grid_height)
             {
                 Obstacle obs = allObstacles[nx, ny];
-                if (obs != null && !damagedList.Contains(obs))
+                if (CanCubeBlastDamageObstacle(obs) && !damagedList.Contains(obs))
                 {
                     DamageObstacle(obs);
                     damagedList.Add(obs);
                 }
             }
         }
+    }
+
+    // Checks if a regular cube blast can hit this obstacle.
+    bool CanCubeBlastDamageObstacle(Obstacle obstacle)
+    {
+        return obstacle != null && obstacle.obstacleType != "s";
     }
 
     // Finds the full tapped color group.
