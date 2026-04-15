@@ -291,9 +291,8 @@ public partial class GridManager
             return;
         }
 
-        Sprite smallStarSprite = GetRocketTrailStarSprite(smallStarRocketTrailPrefab);
         Sprite bigStarSprite = GetRocketTrailStarSprite(bigStarRocketTrailPrefab);
-        if (smallStarSprite == null && bigStarSprite == null && smallStarRocketTrailPrefab == null && bigStarRocketTrailPrefab == null)
+        if (bigStarSprite == null && bigStarRocketTrailPrefab == null)
         {
             return;
         }
@@ -307,21 +306,7 @@ public partial class GridManager
             Vector3 position = Vector3.Lerp(start, end, t);
             position += perpendicular * Random.Range(-rocketTrailJitter, rocketTrailJitter);
 
-            bool useBigStar = bigStarRocketTrailPrefab != null && i % 5 == 0;
-            GameObject star = useBigStar
-                ? CreateRocketTrailStar(bigStarSprite != null ? null : bigStarRocketTrailPrefab, bigStarSprite)
-                : CreateRocketTrailStar(smallStarSprite != null ? null : smallStarRocketTrailPrefab, smallStarSprite);
-
-            if (star == null && !useBigStar)
-            {
-                star = CreateRocketTrailStar(bigStarSprite != null ? null : bigStarRocketTrailPrefab, bigStarSprite);
-                useBigStar = true;
-            }
-            else if (star == null)
-            {
-                star = CreateRocketTrailStar(smallStarSprite != null ? null : smallStarRocketTrailPrefab, smallStarSprite);
-                useBigStar = false;
-            }
+            GameObject star = CreateRocketTrailStar(bigStarSprite != null ? null : bigStarRocketTrailPrefab, bigStarSprite);
 
             if (star == null)
             {
@@ -330,8 +315,7 @@ public partial class GridManager
 
             star.transform.localPosition = position;
             star.transform.localRotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
-            float baseScale = useBigStar ? bigRocketTrailStarScale : smallRocketTrailStarScale;
-            star.transform.localScale = Vector3.one * baseScale * Random.Range(0.75f, 1.25f);
+            star.transform.localScale = Vector3.one * bigRocketTrailStarScale * Random.Range(0.75f, 1.25f);
 
             SpriteRenderer[] renderers = star.GetComponentsInChildren<SpriteRenderer>();
             foreach (SpriteRenderer renderer in renderers)

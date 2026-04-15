@@ -1189,8 +1189,9 @@ MonoBehaviour:
   obstaclesParent: {fileID: 1497126139}
   rocketHintsParent: {fileID: 0}
   rocketsParent: {fileID: 0}
+  effectsParent: {fileID: 0}
   celebrationPrefab: {fileID: 7301868563775579186, guid: 8879542d7cfc0ee44a98a98ff312ef72, type: 3}
-  failPopup: {fileID: 0}
+  failPopup: {fileID: 1025607805657204984, guid: 88509c7651bac3e4f998b429a0a9565f, type: 3}
   gridVisualScale: 100
   redCubePrefab: {fileID: 6931834663621290641, guid: 595f5b93a30fc5d498c586244a541673, type: 3}
   greenCubePrefab: {fileID: 2312884987861070543, guid: 65fd38b2b7ffa124bbc9cf61e0538d51, type: 3}
@@ -1206,9 +1207,27 @@ MonoBehaviour:
   horizontalRocketRightPartPrefab: {fileID: 1753950742806335391, guid: ee858b4c3bb9eae4498c649b5004109f, type: 3}
   verticalRocketUpPartPrefab: {fileID: 3465429360736411525, guid: a3c3595bca0b18b4b9a0662fb27660ea, type: 3}
   verticalRocketDownPartPrefab: {fileID: 1845211510024195487, guid: 4ede957159e1e9f439f6096ac8613e60, type: 3}
+  smallStarRocketTrailPrefab: {fileID: 9008242318297179193, guid: 4f9f0b8f73befda4db13f4313e810729, type: 3}
+  bigStarRocketTrailPrefab: {fileID: 692301311265267774, guid: eae16d711d172324789ac1765456be33, type: 3}
   boxPrefab: {fileID: 4102199147798950512, guid: e0c6a2604c291d24dad584d6de2f5aba, type: 3}
   stonePrefab: {fileID: 6463514956440257223, guid: 277fa034355d8c24baab7b7ea771fb05, type: 3}
   vasePrefab: {fileID: 2608457032037634377, guid: f81d0d0615724c44eaf7bf59a8b01351, type: 3}
+  boxShardPrefabs: []
+  stoneShardPrefabs: []
+  vaseShardPrefabs: []
+  redCubeParticlePrefab: {fileID: 0}
+  greenCubeParticlePrefab: {fileID: 0}
+  blueCubeParticlePrefab: {fileID: 0}
+  yellowCubeParticlePrefab: {fileID: 0}
+  cubeParticleCount: 8
+  cubeParticleScale: 0.22
+  particleLifetime: 0.6
+  rocketTrailStarsPerCell: 25
+  smallRocketTrailStarScale: 0.12
+  bigRocketTrailStarScale: 0.2
+  rocketTrailJitter: 0.045
+  rocketTrailDestroyInterval: 0.004
+  rocketTrailDestroyBatchSize: 25
   movesText: {fileID: 0}
   moveCounterText: {fileID: 1670419573}
   goalCounterText: {fileID: 0}
